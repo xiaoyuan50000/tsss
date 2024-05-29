@@ -71,7 +71,7 @@ module.exports.SFTPConf = {
     host: '192.168.1.8',
     port: '22',
     username: 'ngts',
-    password: '123456',
+    pwd: '123456',
     readyTimeout: 10000,
     retries: 0,
 };

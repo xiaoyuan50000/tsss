@@ -7,9 +7,9 @@ module.exports.sequelizeServerObj = new Sequelize(conf.dbServerConf.database, co
     host: conf.dbServerConf.host,
     port: conf.dbServerConf.port,
     dialect: 'mysql',
-    // logging: msg => {
-    //     log.info(msg)
-    // },
+    logging: msg => {
+        log.info(msg)
+    },
     define: {
         freezeTableName: true
     },

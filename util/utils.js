@@ -3,7 +3,7 @@ const moment = require('moment');
 const crypto = require('crypto');
 const axios = require('axios')
 const conf = require('../conf/conf')
-
+const systemConf = require('../conf/systemConf');
 
 module.exports.wait = async function (time) {
     return new Promise((resolve, reject) => {
@@ -14,7 +14,7 @@ module.exports.wait = async function (time) {
 };
 
 const decodeAESCode = function (str) {
-    const deciper = crypto.createDecipheriv('aes128', '0123456789abcdef', '0123456789abcdef');
+    const deciper = crypto.createDecipheriv('aes128', systemConf.aesKey, systemConf.aesIv);
     let descrped = deciper.update(str, 'hex', 'utf8');
     descrped += deciper.final('utf8')
     return descrped;
@@ -192,4 +192,14 @@ module.exports.SendTripToMobiusServer = async function (tripIdList) {
             return null
         });
     }
+}
+
+module.exports.getSafeFileName = function (p) {
+    p = p.replace(/%2e/ig, '.')
+    p = p.replace(/%2f/ig, '/')
+    p = p.replace(/%5c/ig, '\\')
+    p = p.replace(/^[/\\]?/, '/')
+    p = p.replace(/[/\\]\.\.[/\\]/, '/')
+    p = path.normalize(p).replace(/\\/g, '/').slice(1)
+    return p
 }

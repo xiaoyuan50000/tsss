@@ -1,10 +1,14 @@
 let express = require('express');
 const log = require('./log/winston').logger('APP');
-
+const helmet = require('helmet');
 const indexRouter = require('./routes/index');
+const csrf = require('csurf');
 
 
 let app = express();
+
+const csrfProtection = csrf({ cookie: { secure: true, httpOnly: true } });
+
 app.use(express.json({ limit: '16mb' }));
 app.use(express.urlencoded({ extended: false }));
 
@@ -24,7 +28,21 @@ app.use(function (err, req, res, next) {
     res.json('Server error!');
 });
 
-
+app.use(helmet({
+	contentSecurityPolicy: {
+		useDefaults: false,
+		directives: {
+			"default-src": ["'self'"],
+			"script-src": ["'self' 'unsafe-inline' blob:"],
+			"script-src-attr": ["'self' 'unsafe-inline'"],
+			"style-src": ["'self' 'unsafe-inline'"],
+			"connect-src": ["'self'"],
+			"img-src": ["'self' data:"],
+			"form-action": ["'self'"],
+			"frame-ancestors": ["'self'"],
+		},
+	},
+}));
 
 require('./util/initFolder')
 

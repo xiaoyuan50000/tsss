@@ -5,6 +5,7 @@ const path = require('path');
 const moment = require('moment');
 const conf = require('../conf/conf');
 const reqAck = require('../childProcess/reqAck.js')
+const utils = require('../util/utils');
 
 let router = express.Router();
 
@@ -25,7 +26,8 @@ const upload = multer({ storage: storage });
 
 router.post('/upload/indent', upload.single('file'), async function (req, res, next) {
     const file = req.file;
-    let filedata = await reqAck.readCSVFileData(file.path)
+    const filePath = utils.getSafeFileName(file.path)
+    let filedata = await reqAck.readCSVFileData(filePath)
     let result = await reqAck.processReqAckFileDatas([filedata])
     if (result.length) {
         return res.json({
