@@ -19,37 +19,44 @@ process.on('message', async processParams => {
 
         let result = await sequelizeServerObj.query(
             `SELECT
-                a.driverId,
-                a.driverName,
-                a.nric,
-                a.isValid,
-                b.id AS permitTypeDetailId,
-                c.id AS platformId
+                * 
             FROM
                 (
-                    SELECT driverId, driverName,nric, 'A' as isValid FROM driver 
+                SELECT
+                    a.driverId,
+                    a.nric,
+                    a.permitStatus,
+                    b.vehicleType as permitType,
+                    0 as ngtsId,
+                    'P' as type
+                FROM
+                    driver a
+                    INNER JOIN driver_platform_conf b ON a.driverId = b.driverId and b.approveStatus = 'Approved'
                 UNION
-                SELECT driverId, driverName,nric, 'S' as isValid from driver_history
-            ) a
-            LEFT JOIN driver_permittype_detail b ON a.driverId = b.driverId
-            LEFT JOIN driver_platform_conf c ON a.driverId = c.driverId
-            GROUP BY
-                a.driverId`,
+                SELECT
+                    a.driverId,
+                    a.nric,
+                    a.permitStatus,
+                    c.permitType,
+                    c.ngtsId,
+                    'C' as type
+                FROM
+                    driver a
+                    INNER JOIN driver_permittype_detail b ON a.driverId = b.driverId
+                    LEFT JOIN permittype c ON b.permitType = c.permitType 
+                ) a 
+                where a.nric is not null
+                order by a.driverId`,
             {
                 type: QueryTypes.SELECT
             })
 
         let data = result.map(o => {
-            let { driverId, driverName, nric, isValid, permitTypeDetailId, platformId } = o
+            let { nric, permitStatus, permitType, type, ngtsId } = o
             if (nric.length > 9) {
                 nric = decodeAESCode(nric)
             }
-            let permitType = ''
-            if (permitTypeDetailId && !platformId) {
-                permitType = 'C'
-            } else if (!permitTypeDetailId && platformId || permitTypeDetailId && platformId) {
-                permitType = 'P'
-            }
+            let isValid = permitStatus == 'valid' ? 'A' : 'S'
             return [
                 nric,
                 '',
@@ -58,10 +65,10 @@ process.on('message', async processParams => {
                 '',
                 '',
                 isValid,
-                0,
+                ngtsId || '',
+                type,
                 permitType,
-                '',
-                ''
+                'Q'
             ]
         })
         data.push([Prefix.Footer, data.length])

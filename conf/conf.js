@@ -1,5 +1,5 @@
 module.exports.dbServerConf = {
-    host: '192.168.1.18',
+    host: '192.168.1.3',
     user: 'root',
     password: 'root',
     port: 3306,
@@ -12,7 +12,7 @@ module.exports.dbSystemConf = {
     user: 'root',
     password: 'root',
     port: 3306,
-    database: 'tms4',
+    database: 'tms3',
     timezone: 'GMT%2B8',
     multipleStatements: true,
     connectionLimit: 500
@@ -53,8 +53,8 @@ module.exports.auto_assign = false
 module.exports.scheduleCron = {
     SAVE_VEHICLE: ['0 0 2 * * *'],
     NGTS_VEHICLE: ['0 0 15 * * *'],
-    // NGTS_QNC: ['0 0 15 * * *'],
-    NGTS_LOCATION: ['0 0 15 * * *'],
+    NGTS_QNC: ['0 0 15 * * *'],
+    NGTS_LOCATION: ['0 08 18 * * *'],
     NGTS_REQ_ACK: ['0 0 3 * * *', '0 0 7 * * *', '0 0 11 * * *', '0 0 15 * * *', '0 0 19 * * *', '0 0 23 * * *'],
     NGTS_RESP: ['0 0 3 * * *', '0 0 7 * * *', '0 0 11 * * *', '0 0 15 * * *', '0 0 19 * * *', '0 0 23 * * *'],
 }
@@ -68,10 +68,10 @@ module.exports.SFTPRemotePath = {
 }
 
 module.exports.SFTPConf = {
-    host: '192.168.1.8',
+    host: '192.168.1.3',
     port: '22',
     username: 'ngts',
-    pwd: '123456',
+    password: '123456',
     readyTimeout: 10000,
     retries: 0,
 };

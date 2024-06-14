@@ -103,7 +103,7 @@ const ValidTripData = async function (fileDatas) {
                 error.push({ referenceId, lineNumber, errorCode: ErrorEnum.Transaction_Type_RegexErr.code, errorMessage: ErrorEnum.Transaction_Type_RegexErr.message })
             }
 
-            if (!RegexContent.Transaction_Datetime.test(transacationDateTime)) {
+            if (!RegexContent.Transaction_Datetime.test(transacationDateTime) || !moment(transacationDateTime).isValid()) {
                 error.push({ referenceId, lineNumber, errorCode: ErrorEnum.Transaction_Datetime_RegexErr.code, errorMessage: ErrorEnum.Transaction_Datetime_RegexErr.message })
             }
             if (!RegexContent.Requestor_Name.test(requestorName)) {
@@ -125,10 +125,10 @@ const ValidTripData = async function (fileDatas) {
             if (!RegexContent.Resource_Quantity.test(resourceQuantity)) {
                 error.push({ referenceId, referenceId, lineNumber, errorCode: ErrorEnum.Resource_Quantity_RegexErr.code, errorMessage: ErrorEnum.Resource_Quantity_RegexErr.message })
             }
-            if (!RegexContent.Start_DateTime.test(startDateTime)) {
+            if (!RegexContent.Start_DateTime.test(startDateTime) || !moment(startDateTime).isValid()) {
                 error.push({ referenceId, referenceId, lineNumber, errorCode: ErrorEnum.Start_DateTime_RegexErr.code, errorMessage: ErrorEnum.Start_DateTime_RegexErr.message })
             }
-            if (!RegexContent.End_DateTime.test(endDateTime)) {
+            if (!RegexContent.End_DateTime.test(endDateTime) || !moment(endDateTime).isValid()) {
                 error.push({ referenceId, referenceId, lineNumber, errorCode: ErrorEnum.End_DateTime_RegexErr.code, errorMessage: ErrorEnum.End_DateTime_RegexErr.message })
             }
             if (!RegexContent.POC_Unit_Code.test(pocUnitCode)) {
@@ -151,7 +151,7 @@ const ValidTripData = async function (fileDatas) {
             if (!RegexContent.Prepark_Quantity.test(preparkQuantity)) {
                 error.push({ referenceId, lineNumber, errorCode: ErrorEnum.Prepark_Quantity_RegexErr.code, errorMessage: ErrorEnum.Prepark_Quantity_RegexErr.message })
             }
-            if (!RegexContent.Prepark_DateTime.test(preparkDateTime)) {
+            if (!RegexContent.Prepark_DateTime.test(preparkDateTime) || !moment(preparkDateTime).isValid()) {
                 error.push({ referenceId, lineNumber, errorCode: ErrorEnum.Prepark_DateTime_RegexErr.code, errorMessage: ErrorEnum.Prepark_DateTime_RegexErr.message })
             }
             if (!RegexContent.Number_of_Driver.test(numberOfDriver)) {

@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const axios = require('axios')
 const conf = require('../conf/conf')
 const systemConf = require('../conf/systemConf');
+const path = require('path')
 
 module.exports.wait = async function (time) {
     return new Promise((resolve, reject) => {

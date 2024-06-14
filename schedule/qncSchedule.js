@@ -9,17 +9,17 @@ const log = require('../log/winston').logger(text);
 
 module.exports.qncScheduleStart = function () {
 
-    // for (let cron of conf.scheduleCron.NGTS_QNC) {
-    //     log.info(`Init ${text}: cron: ${cron} `);
+    for (let cron of conf.scheduleCron.NGTS_QNC) {
+        log.info(`Init ${text}: cron: ${cron} `);
 
-    //     schedule.scheduleJob(text, cron, async () => {
-    //         log.info(`(${text} ${moment().format('YYYY-MM-DD HH:mm:ss')} ): start working!`);
-    //         const childProcess = fork('./childProcess/qnc.js')
-    //         childProcess.on('message', async msg => {
-    //             log.info(`(${text} ${moment().format('YYYY-MM-DD HH:mm:ss')} ): finish working!`);
-    //             childProcess.disconnect();
-    //         })
-    //         childProcess.send({cron})
-    //     })
-    // }
+        schedule.scheduleJob(text, cron, async () => {
+            log.info(`(${text} ${moment().format('YYYY-MM-DD HH:mm:ss')} ): start working!`);
+            const childProcess = fork('./childProcess/qnc.js')
+            childProcess.on('message', async msg => {
+                log.info(`(${text} ${moment().format('YYYY-MM-DD HH:mm:ss')} ): finish working!`);
+                childProcess.disconnect();
+            })
+            childProcess.send({cron})
+        })
+    }
 }

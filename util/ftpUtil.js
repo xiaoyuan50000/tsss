@@ -14,7 +14,7 @@ const SFTPConf = {
     host: conf.SFTPConf.host,
     port: conf.SFTPConf.port,
     user: conf.SFTPConf.username,
-    password: conf.SFTPConf.pwd,
+    password: conf.SFTPConf.password,
     keepalive: 1000,
     pasvTimeout: 100,
 }

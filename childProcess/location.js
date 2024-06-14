@@ -17,7 +17,7 @@ process.on('message', async processParams => {
 
 
         let locationList = await Location.findAll()
-        let data = locationList.map(o => [o.id, o.locationName, (o.belongTo && o.belongTo.toUpperCase() == 'ATMS') ? 'A' : 'D'])
+        let data = locationList.map(o => [o.id, o.locationName.replace(/\r?\n/g, ''), (o.belongTo && o.belongTo.toUpperCase() == 'ATMS') ? 'A' : 'D'])
         data.push([Prefix.Footer, data.length])
         let { code } = await csvUtil.write(filename, data)
         if (code == 1) {

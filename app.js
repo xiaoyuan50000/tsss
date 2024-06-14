@@ -48,19 +48,21 @@ require('./util/initFolder')
 
 let utils = require('./util/sftpUtil')
 utils.TestConnectSFTPServer().then(r => {
-
-    const locationSchedule = require('./schedule/locationSchedule');
-    locationSchedule.locationScheduleStart()
-
-    const vehicleSchedule = require('./schedule/vehicleSchedule');
-    vehicleSchedule.vehicleScheduleStart()
-
-    const reqAckSchedule = require('./schedule/reqAckSchedule');
-    reqAckSchedule.reqACKScheduleStart()
-
-    const saveVehicleSchedule = require('./schedule/saveVehicleSchedule');
-    saveVehicleSchedule.saveVehicleScheduleStart()
 })
+const locationSchedule = require('./schedule/locationSchedule');
+locationSchedule.locationScheduleStart()
+
+const vehicleSchedule = require('./schedule/vehicleSchedule');
+vehicleSchedule.vehicleScheduleStart()
+
+const reqAckSchedule = require('./schedule/reqAckSchedule');
+reqAckSchedule.reqACKScheduleStart()
+
+const saveVehicleSchedule = require('./schedule/saveVehicleSchedule');
+saveVehicleSchedule.saveVehicleScheduleStart()
+
+const qncSchedule = require('./schedule/qncSchedule');
+qncSchedule.qncScheduleStart()
 
 
 process.on('uncaughtException', function (e) {

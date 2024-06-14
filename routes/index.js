@@ -19,7 +19,7 @@ const storage = multer.diskStorage({
         const basename = path.basename(originalname, ext)
         const name = basename + '_UPLOAD_' + moment().format("YYYYMMDDHHmm") + ext
         cb(null, name);
-    }
+    },
 });
 
 const upload = multer({ storage: storage });
