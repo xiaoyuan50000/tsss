@@ -53,6 +53,7 @@ module.exports.auto_assign = false
 module.exports.scheduleCron = {
     SAVE_VEHICLE: ['0 0 2 * * *'],
     NGTS_VEHICLE: ['0 0 15 * * *'],
+    NGTS_VEHICLE_AVAIL: ['0 0 15 * * *'],
     NGTS_QNC: ['0 0 15 * * *'],
     NGTS_LOCATION: ['0 08 18 * * *'],
     NGTS_REQ_ACK: ['0 0 3 * * *', '0 0 7 * * *', '0 0 11 * * *', '0 0 15 * * *', '0 0 19 * * *', '0 0 23 * * *'],

@@ -88,19 +88,21 @@ const saveVehicle = async function () {
         if (!compareArrays(mvServiceModeIdList, serviceModeList)) {
             for (let serviceModeId of serviceModeList) {
                 let obj = vehicleSubGroupList.find(o => Number(o.serviceModeId) == Number(serviceModeId))
-                let record = {
-                    resourceType: typeOfVehicle,
-                    group: 'C',
-                    serviceTypeId: obj.serviceTypeId,
-                    serviceType: obj.serviceType,
-                    serviceModeId: obj.serviceModeId,
-                    serviceMode: obj.serviceMode,
-                    serviceModeValue: obj.serviceModeValue,
-                    status: vehicleStatus,
-                    baseLineQty: 9999,
-                }
                 // log.info(JSON.stringify(record))
-                records.push(record)
+                if (!records.some(o => o.resourceType == typeOfVehicle && Number(o.serviceTypeId) == Number(obj.serviceTypeId) && Number(o.serviceModeId) == Number(obj.serviceModeId))) {
+                    let record = {
+                        resourceType: typeOfVehicle,
+                        group: 'C',
+                        serviceTypeId: obj.serviceTypeId,
+                        serviceType: obj.serviceType,
+                        serviceModeId: obj.serviceModeId,
+                        serviceMode: obj.serviceMode,
+                        serviceModeValue: obj.serviceModeValue,
+                        status: vehicleStatus,
+                        baseLineQty: 9999,
+                    }
+                    records.push(record)
+                }
             }
         }
     })
@@ -116,18 +118,20 @@ const saveVehicle = async function () {
                     && o.serviceType.toUpperCase() == category.toUpperCase())
                 log.info(JSON.stringify(obj))
                 if (obj) {
-                    let record = {
-                        resourceType: vehicleName,
-                        group: 'M',
-                        serviceTypeId: obj.serviceTypeId,
-                        serviceType: obj.serviceType,
-                        serviceModeId: obj.serviceModeId,
-                        serviceMode: obj.serviceMode,
-                        serviceModeValue: obj.serviceModeValue,
-                        status: vehicleStatus,
-                        baseLineQty: baseLineQty ? baseLineQty : 1,
+                    if (!records.some(o => o.resourceType == vehicleName && Number(o.serviceTypeId) == Number(obj.serviceTypeId) && Number(o.serviceModeId) == Number(obj.serviceModeId))) {
+                        let record = {
+                            resourceType: vehicleName,
+                            group: 'M',
+                            serviceTypeId: obj.serviceTypeId,
+                            serviceType: obj.serviceType,
+                            serviceModeId: obj.serviceModeId,
+                            serviceMode: obj.serviceMode,
+                            serviceModeValue: obj.serviceModeValue,
+                            status: vehicleStatus,
+                            baseLineQty: baseLineQty ? baseLineQty : 1,
+                        }
+                        records.push(record)
                     }
-                    records.push(record)
                 } else {
                     log.info(`Cannot find service type: ${category}, service mode: ${serviceMode} in system.`)
                 }
@@ -177,4 +181,4 @@ const saveVehicle = async function () {
     }
 }
 
-// saveVehicle()
+saveVehicle()

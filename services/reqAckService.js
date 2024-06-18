@@ -33,6 +33,7 @@ const { sequelizeServerObj } = require('../db/dbConf_server');
 const { Job2, OperationHistory, Job2History } = require('../model/system/job2.js');
 
 const fmt = "YYYY-MM-DD HH:mm"
+const fmt1 = "YYYYMMDDHHmmss"
 const convertDate = function (dateStr) {
     if (!dateStr) {
         return null
@@ -103,7 +104,7 @@ const ValidTripData = async function (fileDatas) {
                 error.push({ referenceId, lineNumber, errorCode: ErrorEnum.Transaction_Type_RegexErr.code, errorMessage: ErrorEnum.Transaction_Type_RegexErr.message })
             }
 
-            if (!RegexContent.Transaction_Datetime.test(transacationDateTime) || !moment(transacationDateTime).isValid()) {
+            if (!RegexContent.Transaction_Datetime.test(transacationDateTime) || !moment(transacationDateTime, fmt1).isValid()) {
                 error.push({ referenceId, lineNumber, errorCode: ErrorEnum.Transaction_Datetime_RegexErr.code, errorMessage: ErrorEnum.Transaction_Datetime_RegexErr.message })
             }
             if (!RegexContent.Requestor_Name.test(requestorName)) {
@@ -125,10 +126,10 @@ const ValidTripData = async function (fileDatas) {
             if (!RegexContent.Resource_Quantity.test(resourceQuantity)) {
                 error.push({ referenceId, referenceId, lineNumber, errorCode: ErrorEnum.Resource_Quantity_RegexErr.code, errorMessage: ErrorEnum.Resource_Quantity_RegexErr.message })
             }
-            if (!RegexContent.Start_DateTime.test(startDateTime) || !moment(startDateTime).isValid()) {
+            if (!RegexContent.Start_DateTime.test(startDateTime) || !moment(startDateTime, fmt1).isValid()) {
                 error.push({ referenceId, referenceId, lineNumber, errorCode: ErrorEnum.Start_DateTime_RegexErr.code, errorMessage: ErrorEnum.Start_DateTime_RegexErr.message })
             }
-            if (!RegexContent.End_DateTime.test(endDateTime) || !moment(endDateTime).isValid()) {
+            if (!RegexContent.End_DateTime.test(endDateTime) || !moment(endDateTime, fmt1).isValid()) {
                 error.push({ referenceId, referenceId, lineNumber, errorCode: ErrorEnum.End_DateTime_RegexErr.code, errorMessage: ErrorEnum.End_DateTime_RegexErr.message })
             }
             if (!RegexContent.POC_Unit_Code.test(pocUnitCode)) {
@@ -151,7 +152,7 @@ const ValidTripData = async function (fileDatas) {
             if (!RegexContent.Prepark_Quantity.test(preparkQuantity)) {
                 error.push({ referenceId, lineNumber, errorCode: ErrorEnum.Prepark_Quantity_RegexErr.code, errorMessage: ErrorEnum.Prepark_Quantity_RegexErr.message })
             }
-            if (!RegexContent.Prepark_DateTime.test(preparkDateTime) || !moment(preparkDateTime).isValid()) {
+            if (preparkDateTime && (!RegexContent.Prepark_DateTime.test(preparkDateTime) || !moment(preparkDateTime, fmt1).isValid())) {
                 error.push({ referenceId, lineNumber, errorCode: ErrorEnum.Prepark_DateTime_RegexErr.code, errorMessage: ErrorEnum.Prepark_DateTime_RegexErr.message })
             }
             if (!RegexContent.Number_of_Driver.test(numberOfDriver)) {
