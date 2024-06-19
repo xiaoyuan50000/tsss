@@ -6,12 +6,15 @@ const log = require('../log/winston').logger('QNC ChildProcess');
 const csvUtil = require('../util/csvUtil');
 const { decodeAESCode } = require('../util/utils');
 const { Prefix } = require('../util/content');
+const { Group } = require('../model/system/group');
 
 
 const sftpUtil = require('../util/sftpUtil');
 
 process.on('message', async processParams => {
     try {
+        let unitCodeList = await Group.findAll()
+
         let dateformat = csvUtil.getFileNameDateFormat(processParams.cron)
         let filename = `NGTS_QNC_${dateformat}.csv`
         log.info(`\r\n`)
@@ -27,11 +30,21 @@ process.on('message', async processParams => {
                     a.nric,
                     a.permitStatus,
                     b.vehicleType as permitType,
-                    0 as ngtsId,
-                    'P' as type
+                    c.ngtsId,
+                    'P' as type,
+                    DATE_FORMAT(b.lastApproveDate,'%Y%m%d') as dateFrom,
+                    DATE_FORMAT(d.ord,'%Y%m%d') as dateTo,
+                    e.nric as approver,
+                    u.unit,
+                    u.subUnit,
+                    a.groupId
                 FROM
                     driver a
                     INNER JOIN driver_platform_conf b ON a.driverId = b.driverId and b.approveStatus = 'Approved'
+                    LEFT JOIN vehicle_category c on b.vehicleType = c.vehicleName
+                    LEFT JOIN user d on a.driverId = d.driverId
+                    LEFT JOIN user e on b.lastApproveBy = e.userId
+                    LEFT JOIN unit u on a.unitId = u.id
                 UNION
                 SELECT
                     a.driverId,
@@ -39,31 +52,40 @@ process.on('message', async processParams => {
                     a.permitStatus,
                     c.permitType,
                     c.ngtsId,
-                    'C' as type
+                    'C' as type,
+                    DATE_FORMAT(b.createdAt,'%Y%m%d') as dateFrom,
+                    DATE_FORMAT(d.ord,'%Y%m%d') as dateTo,
+                    e.nric as approver,
+                    u.unit,
+                    u.subUnit,
+                    a.groupId
                 FROM
                     driver a
                     INNER JOIN driver_permittype_detail b ON a.driverId = b.driverId
                     LEFT JOIN permittype c ON b.permitType = c.permitType 
+                    LEFT JOIN user d on a.driverId = d.driverId
+                    LEFT JOIN user e on b.creator = e.userId
+                    LEFT JOIN unit u on a.unitId = u.id
                 ) a 
                 where a.nric is not null
-                order by a.driverId`,
+                order by a.driverId;`,
             {
                 type: QueryTypes.SELECT
             })
 
         let data = result.map(o => {
-            let { nric, permitStatus, permitType, type, ngtsId } = o
-            if (nric.length > 9) {
-                nric = decodeAESCode(nric)
-            }
+            let { nric, permitStatus, permitType, type, ngtsId, dateFrom, dateTo, approver, unit, subUnit, groupId } = o
+            nric = getNRIC(nric)
+            approver = getNRIC(approver)
             let isValid = permitStatus == 'valid' ? 'A' : 'S'
+            let unitCode = getUnitCode(unit, subUnit, groupId, unitCodeList)
             return [
                 nric,
-                '',
-                '',
-                '',
-                '',
-                '',
+                dateFrom,
+                dateTo,
+                approver,
+                dateFrom,
+                unitCode,
                 isValid,
                 ngtsId || '',
                 type,
@@ -86,3 +108,19 @@ process.on('message', async processParams => {
         process.send({ success: false, error })
     }
 })
+
+const getNRIC = function (data) {
+    if (data && data.length > 9) {
+        return decodeAESCode(data)
+    }
+    return data || ""
+}
+
+const getUnitCode = function (unit, subUnit, groupId, unitCodeList) {
+    if (!groupId) {
+        return `${unit} ${subUnit || ""}`
+    }
+
+    let unitCode = unitCodeList.find(item => item.id == groupId)
+    return unitCode ? unitCode.groupName : ""
+}

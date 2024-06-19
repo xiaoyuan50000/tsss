@@ -33,6 +33,7 @@ class ErrorEnum extends Enum {
     static Remarks_RegexErr = new ErrorEnum(10021, 'Remarks field regular expression error.')
     static Reason_for_Change_RegexErr = new ErrorEnum(10022, 'Reason_for_Change field regular expression error.')
     static NGTS_Resource_ID_RegexErr = new ErrorEnum(10023, 'NGTS_Resource_ID field regular expression error.')
+    static Purpose_RegexErr = new ErrorEnum(100024, 'Purpose field regular expression error.')
 
     static Empty_Err = new ErrorEnum(11001, 'Field empty error.')
 
@@ -45,6 +46,7 @@ class ErrorEnum extends Enum {
     static NGTS_Trip_ID_NOTEXIST = new ErrorEnum(30003, 'NGTS_Trip_ID does not exist.')
     static NGTS_Resource_ID_NOTEXIST = new ErrorEnum(30004, 'NGTS_Resource_ID does not exist.')
     static ATMs_Reference_ID_NOTEXIST = new ErrorEnum(30005, 'ATMs_Reference_ID does not exist.')
+    static Purpose_NOTEXIST = new ErrorEnum(30006, 'Purpose does not exist.')
     
     static Prepark_Quantity_Error = new ErrorEnum(40001, 'Prepark_Quantity should be less than or equal to Resource_Quantity.')
     static Number_of_Driver_Error = new ErrorEnum(40002, 'Number_of_Driver should be less than or equal to Resource_Quantity.')

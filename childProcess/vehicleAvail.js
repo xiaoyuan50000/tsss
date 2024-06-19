@@ -29,19 +29,21 @@ const generateVehicleAvailFile = async function (dateformat) {
         log.info(`\r\n`)
         log.info(`-------------------Start generate ${filename}-------------------`)
 
-        const dateFrom = moment().format('YYYY0601')
+        const dateFrom = moment().format('YYYY0501')
         const dateTo = moment().add(1, 'y').format('YYYY0531')
 
         let vehicleList = await NGTSVehicle.findAll()
         let data = vehicleList.map(o => {
             const type = (o.status != 'A' || o.baseLineQty == 0) ? 'U' : 'M'
+            const periodFrom = type == 'U' ? 'A' : ''
+            const periodTo = type == 'U' ? 'N' : ''
             return [
                 o.id,
                 type,
                 dateFrom,
                 dateTo,
-                '',
-                '',
+                periodFrom,
+                periodTo,
                 o.baseLineQty,
                 ''
             ]

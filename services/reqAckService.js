@@ -56,8 +56,8 @@ const ValidTripData = async function (fileDatas) {
         let { filename, datas } = list
         let validDataList = []
         let errorDataList = []
-        let lastRow = datas.find(o => o.tripId == "FF")
-        if (lastRow && Number(lastRow.referenceId) != datas.length - 1 || !lastRow) {
+        let lastRow = datas.find(o => o.referenceId == "FF")
+        if (lastRow && Number(lastRow.tripId) != datas.length - 1 || !lastRow) {
             errorDataList.push({ referenceId: null, lineNumber: datas.length, errorCode: ErrorEnum.Incorrect_NoOfRecords_Error.code, errorMessage: ErrorEnum.Incorrect_NoOfRecords_Error.message })
             result.push({ filename, validDataList, errorDataList })
         }
@@ -72,6 +72,7 @@ const ValidTripData = async function (fileDatas) {
         }
     })
     let vehicleList = await NGTSVehicle.findAll()
+    let purposeModeList = await PurposeMode.findAll()
 
 
     for (let list of fileDatas) {
@@ -82,14 +83,14 @@ const ValidTripData = async function (fileDatas) {
         for (let data of datas) {
             let error = []
             let { tripId, referenceId, transacationType, transacationDateTime, requestorName,
-                trainingActivityName, conductingUnitCode, serviceMode, resourceId, resourceQuantity, startDateTime,
+                trainingActivityName, conductingUnitCode, purposeNGTSId, serviceMode, resourceId, resourceQuantity, startDateTime,
                 endDateTime, pocUnitCode, pocName, pocMobileNumber, reportingLocationId, destinationLocationId,
                 preparkQuantity, preparkDateTime, numberOfDriver, wpmAllocatedNumber, remarks, reasonForChange } = data
 
-            if (tripId == "FF") {
+            if (referenceId == "FF") {
                 break
             }
-            if (!referenceId || !conductingUnitCode || !serviceMode || !resourceId || !startDateTime || !endDateTime || !pocName || !pocMobileNumber
+            if (!referenceId || !conductingUnitCode || !purposeNGTSId || !serviceMode || !resourceId || !startDateTime || !endDateTime || !pocName || !pocMobileNumber
                 || !reportingLocationId || !destinationLocationId) {
                 error.push({ referenceId, lineNumber, errorCode: ErrorEnum.Empty_Err.code, errorMessage: ErrorEnum.Empty_Err.message })
             }
@@ -118,6 +119,9 @@ const ValidTripData = async function (fileDatas) {
             }
             if (!RegexContent.Service_Mode.test(serviceMode)) {
                 error.push({ referenceId, referenceId, lineNumber, errorCode: ErrorEnum.Service_Mode_RegexErr.code, errorMessage: ErrorEnum.Service_Mode_RegexErr.message })
+            }
+            if (!RegexContent.Purpose.test(purposeNGTSId)) {
+                error.push({ referenceId, referenceId, lineNumber, errorCode: ErrorEnum.Purpose_RegexErr.code, errorMessage: ErrorEnum.Purpose_RegexErr.message })
             }
             if (!RegexContent.NGTS_Resource_ID.test(resourceId)) {
                 error.push({ referenceId, referenceId, lineNumber, errorCode: ErrorEnum.NGTS_Resource_ID_RegexErr.code, errorMessage: ErrorEnum.NGTS_Resource_ID_RegexErr.message })
@@ -198,6 +202,11 @@ const ValidTripData = async function (fileDatas) {
                 error.push({ referenceId, lineNumber, errorCode: ErrorEnum.NGTS_Resource_ID_NOTEXIST.code, errorMessage: ErrorEnum.NGTS_Resource_ID_NOTEXIST.message })
             }
 
+            let purposeMode = purposeModeList.find(o => o.ngtsId == purposeNGTSId)
+            if (!purposeMode) {
+                error.push({ referenceId, lineNumber, errorCode: ErrorEnum.Purpose_NOTEXIST.code, errorMessage: ErrorEnum.Purpose_NOTEXIST.message })
+            }
+
             if (error.length == 0) {
                 data.transacationDateTime = convertDate(data.transacationDateTime)
                 data.startDateTime = convertDate(data.startDateTime)
@@ -209,6 +218,7 @@ const ValidTripData = async function (fileDatas) {
                 data.lineNumber = lineNumber
                 data.filename = filename
                 data.vehicle = vehicle
+                data.purposeMode = purposeMode
 
                 validDataList.push(data)
             } else {
@@ -257,9 +267,6 @@ module.exports.GetTripModel = async function (tripDatas) {
         }
     );
 
-    let purposeMode = await PurposeMode.findOne({ where: { name: 'Training' } })
-    let purposeId = purposeMode ? purposeMode.id : -1
-
     let purposeServiceTypeList = await PurposeServiceType.findAll()
 
     let createIndentList = []
@@ -273,8 +280,9 @@ module.exports.GetTripModel = async function (tripDatas) {
         let updateDataList = validDataList.filter(row => row.transacationType == 'U')
         let cancelDataList = validDataList.filter(row => row.transacationType == 'C')
 
+
         // create
-        let { indentList, autoAssignedTripNoList } = await GetCreateModel(createDataList, unitCodeList, recurringModeList, serviceModeList, mobiusSubUnits, purposeId, purposeServiceTypeList)
+        let { indentList, autoAssignedTripNoList } = await GetCreateModel(createDataList, unitCodeList, recurringModeList, serviceModeList, mobiusSubUnits, purposeServiceTypeList)
         if (indentList.length > 0) {
             createIndentList.push(...indentList)
         }
@@ -284,7 +292,7 @@ module.exports.GetTripModel = async function (tripDatas) {
 
         // update
         // { newJobList, needCreateTSPList, needCancelTSPList, needDeleteTaskIdList, needDeleteTripIdList, updateCancelTaskAcceptIdList, errorUpdateReqAckList }
-        let updateModelList = await GetUpdateModel(updateDataList, recurringModeList, serviceModeList, mobiusSubUnits, purposeId, purposeServiceTypeList)
+        let updateModelList = await GetUpdateModel(updateDataList, recurringModeList, serviceModeList, mobiusSubUnits, purposeServiceTypeList)
         if (updateModelList.newJobList.length > 0) {
             updateTripList.push({
                 newJobList: updateModelList.newJobList,
@@ -339,7 +347,7 @@ const GetRequestModel = function (row, unitCodeList) {
     let unit = unitCodeList.find(o => o.groupName == row.conductingUnitCode)
     let indent = {
         id: requestId,
-        purposeType: "Training",
+        purposeType: row.purposeMode.name,
         additionalRemarks: row.trainingActivityName,
         groupId: unit ? unit.id : null,
         requestorName: row.requestorName,
@@ -357,7 +365,7 @@ const GetRequestModel = function (row, unitCodeList) {
     return indent
 }
 
-const GetJobModel = function (requestId, tripNo, row, vehicle, recurringMode, purposeServiceTypeList, purposeId) {
+const GetJobModel = function (requestId, tripNo, row, vehicle, recurringMode, purposeServiceTypeList) {
     let executionDate = moment(row.startDateTime).format('YYYY-MM-DD')
     let executionTime = moment(row.startDateTime).format('HH:mm')
     let duration = null
@@ -404,7 +412,7 @@ const GetJobModel = function (requestId, tripNo, row, vehicle, recurringMode, pu
         if (o && o.serviceTypeId) {
             let serviceTypeIdList = o.serviceTypeId.split(',')
             serviceTypeIdList = serviceTypeIdList.map(Number)
-            return serviceTypeIdList.includes(Number(trip.serviceTypeId)) && o.purposeId == purposeId
+            return serviceTypeIdList.includes(Number(trip.serviceTypeId)) && o.purposeId == row.purposeMode.id
         }
     })
     let funding = purposeServiceType.length ? purposeServiceType[0].funding : null
@@ -421,7 +429,7 @@ const GetJobModel = function (requestId, tripNo, row, vehicle, recurringMode, pu
     return trip
 }
 
-const GetPreparkJobModel = function (requestId, tripNo, row, vehicle, recurringMode, purposeServiceTypeList, purposeId) {
+const GetPreparkJobModel = function (requestId, tripNo, row, vehicle, recurringMode, purposeServiceTypeList) {
     let executionDate = moment(row.preparkDateTime).format('YYYY-MM-DD')
     let executionTime = moment(row.preparkDateTime).format('HH:mm')
     let trip = {
@@ -464,7 +472,7 @@ const GetPreparkJobModel = function (requestId, tripNo, row, vehicle, recurringM
         if (o.serviceTypeId) {
             let serviceTypeIdList = o.serviceTypeId.split(',')
             serviceTypeIdList = serviceTypeIdList.map(Number)
-            return serviceTypeIdList.includes(Number(trip.serviceTypeId)) && o.purposeId == purposeId
+            return serviceTypeIdList.includes(Number(trip.serviceTypeId)) && o.purposeId == row.purposeMode.id
         }
     })
     let funding = purposeServiceType.length ? purposeServiceType[0].funding : null
@@ -481,7 +489,7 @@ const GetPreparkJobModel = function (requestId, tripNo, row, vehicle, recurringM
     return trip
 }
 
-const GetCreateModel = async function (createDataList, unitCodeList, recurringModeList, serviceModeList, mobiusSubUnits, purposeId, purposeServiceTypeList) {
+const GetCreateModel = async function (createDataList, unitCodeList, recurringModeList, serviceModeList, mobiusSubUnits, purposeServiceTypeList) {
     let indentList = []
     let autoAssignedTripNoList = []
 
@@ -494,13 +502,13 @@ const GetCreateModel = async function (createDataList, unitCodeList, recurringMo
         let vehicle = row.vehicle
         let recurringMode = recurringModeList.find(o => o.service_mode_value == vehicle.serviceModeValue)
 
-        let trip = GetJobModel(requestId, tripNo, row, vehicle, recurringMode, purposeServiceTypeList, purposeId)
+        let trip = GetJobModel(requestId, tripNo, row, vehicle, recurringMode, purposeServiceTypeList)
         let taskList = await GetTaskModel(trip, row, serviceModeList, mobiusSubUnits)
         trip.taskList = taskList
         tripList.push(trip)
 
         if (row.preparkDateTime) {
-            let trip = GetPreparkJobModel(requestId, tripNo, row, vehicle, recurringMode, purposeServiceTypeList, purposeId)
+            let trip = GetPreparkJobModel(requestId, tripNo, row, vehicle, recurringMode, purposeServiceTypeList)
             let taskList = await GetTaskModel(trip, row, serviceModeList, mobiusSubUnits)
             trip.taskList = taskList
             tripList.push(trip)
@@ -601,7 +609,7 @@ const GetTaskModel = async function (trip, row, serviceModeList, mobiusSubUnits)
     return taskList
 }
 
-const GetUpdateModel = async function (updateDataList, recurringModeList, serviceModeList, mobiusSubUnits, purposeId, purposeServiceTypeList) {
+const GetUpdateModel = async function (updateDataList, recurringModeList, serviceModeList, mobiusSubUnits, purposeServiceTypeList) {
     if (updateDataList.length == 0) {
         return { newJobList: [], needCreateTSPList: [], needCancelTSPList: [], needDeleteTaskIdList: [], needDeleteTripIdList: [], updateCancelTaskAcceptIdList: [], errorUpdateReqAckList: [], autoAssignedTripNoList: [] }
     }
@@ -746,14 +754,14 @@ const GetUpdateModel = async function (updateDataList, recurringModeList, servic
         }
     }
 
-    let { newJobList, needCreateTSPList, autoAssignedTripNoList } = await GetEditJobModel(needEditTripNoList, alreadySendDataTasks, recurringModeList, serviceModeList, mobiusSubUnits, purposeId, purposeServiceTypeList)
+    let { newJobList, needCreateTSPList, autoAssignedTripNoList } = await GetEditJobModel(needEditTripNoList, alreadySendDataTasks, recurringModeList, serviceModeList, mobiusSubUnits, purposeServiceTypeList)
 
     let result = { newJobList, needCreateTSPList, needCancelTSPList, needDeleteTaskIdList, needDeleteTripIdList, updateCancelTaskAcceptIdList, errorUpdateReqAckList, autoAssignedTripNoList }
     log.info(JSON.stringify(result, 'updateResult', 2))
     return result
 }
 
-const GetEditJobModel = async function (needEditTripNoList, alreadySendDataTasks, recurringModeList, serviceModeList, mobiusSubUnits, purposeId, purposeServiceTypeList) {
+const GetEditJobModel = async function (needEditTripNoList, alreadySendDataTasks, recurringModeList, serviceModeList, mobiusSubUnits, purposeServiceTypeList) {
     let newJobList = []
     let needCreateTSPList = []
     let autoAssignedTripNoList = []
@@ -765,7 +773,7 @@ const GetEditJobModel = async function (needEditTripNoList, alreadySendDataTasks
         let vehicle = row.vehicle
         let recurringMode = recurringModeList.find(o => o.service_mode_value == vehicle.serviceModeValue)
 
-        let trip = GetJobModel(requestId, tripNo, row, vehicle, recurringMode, purposeServiceTypeList, purposeId)
+        let trip = GetJobModel(requestId, tripNo, row, vehicle, recurringMode, purposeServiceTypeList)
         trip.id = job.id
         trip.oldJobHistory = job
         trip.tripOperationRecord = {
@@ -804,7 +812,7 @@ const GetEditJobModel = async function (needEditTripNoList, alreadySendDataTasks
                     }
                 }
             })
-            let trip = GetPreparkJobModel(requestId, tripNo, row, vehicle, recurringMode, purposeServiceTypeList, purposeId)
+            let trip = GetPreparkJobModel(requestId, tripNo, row, vehicle, recurringMode, purposeServiceTypeList)
             trip.oldOperationHistoryList = oldOperationHistoryList.map(o => {
                 return {
                     requestId: requestId,
@@ -1279,7 +1287,7 @@ const FilterServiceProvider = async function (vehicle, serviceMode, dropoffPoint
 
     if (serviceMode.chargeType == ChargeType.TRIP) {
         data = data.filter(item => {
-            return (item.dailyTripCondition == null || item.dailyTripCondition != null && invoiceService.IsPeak(executionTime, item.dailyTripCondition))
+            return (item.dailyTripCondition == null || item.dailyTripCondition != null && IsPeak(executionTime, item.dailyTripCondition))
         })
     }
 
@@ -1297,6 +1305,31 @@ const FilterServiceProvider = async function (vehicle, serviceMode, dropoffPoint
     let result = endPointFilterNotWithAll.concat(noExistAll)
     result = result.sort((a, b) => { return (a.name > b.name) ? 1 : -1 });
     return result
+}
+
+const IsPeak = function (executionTime, peakTime) {
+    let fmt = "HH:mm"
+    let fmt1 = "YYYY-MM-DD HH:mm"
+    if (peakTime) {
+        let peakTimes = peakTime.split(',')
+        let isPeak = peakTimes.find(item => {
+            let times = item.split('-')
+            let time0 = times[0]
+            let time1 = times[1]
+            let timeDiff = moment(time0, 'HH:mm').diff(moment(time1, 'HH:mm'), 's')
+            if (timeDiff <= 0) {
+                return moment(executionTime, fmt).diff(moment(time0, fmt), 'm') >= 0 && moment(time1, fmt).diff(moment(executionTime, fmt), 'm') >= 0
+            } else {
+                return moment("2020-01-02 " + executionTime, fmt1).diff(moment("2020-01-01 " + time0, fmt1), 'm') >= 0
+                    && moment("2020-01-02 " + time1, fmt1).diff(moment("2020-01-02 " + executionTime, fmt1), 'm') >= 0
+                    ||
+                    moment("2020-01-01 " + executionTime, fmt1).diff(moment("2020-01-01 " + time0, fmt1), 'm') >= 0
+                    && moment("2020-01-02 " + time1, fmt1).diff(moment("2020-01-01 " + executionTime, fmt1), 'm') >= 0
+            }
+        })
+        return isPeak ? true : false
+    }
+    return false
 }
 
 const GetSendJobJson = function (additionalRemarks, user, pickUpLocation, dropOffLocation, serviceMode, groupName, poNumber, task) {

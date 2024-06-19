@@ -26,6 +26,7 @@ module.exports.RegexContent = {
     Training_Activity_Name: new RegExp(/^[\[\]\^$.|?*+(){}\w\s:;",\/'~`!@#%&-_=<>]{0,511}$/),
     ConductingUnit_Code: new RegExp(/^[\w ]{0,5}$/),
     Service_Mode: new RegExp(/^[\w,.?()-\s]{0,50}$/),
+    Purpose: new RegExp(/^[\w,.?()-\s]{0,50}$/),
     NGTS_Resource_ID: new RegExp(/^[\d]{0,20}/),
     Resource_Quantity: new RegExp(/^[\d]{0,4}$/),
     Start_DateTime: new RegExp(/^[\d]{14}$/),

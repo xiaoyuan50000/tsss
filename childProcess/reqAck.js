@@ -24,8 +24,8 @@ const reqAckService = require('../services/reqAckService');
 
 const sftpUtil = require('../util/sftpUtil');
 
-const customHeaders = ['tripId', 'referenceId', 'transacationType', 'transacationDateTime', 'requestorName',
-    'trainingActivityName', 'conductingUnitCode', 'serviceMode', 'resourceId', 'resourceQuantity', 'startDateTime',
+const customHeaders = ['referenceId', 'tripId', 'transacationType', 'transacationDateTime', 'requestorName',
+    'trainingActivityName', 'conductingUnitCode', 'purposeNGTSId', 'serviceMode', 'resourceId', 'resourceQuantity', 'startDateTime',
     'endDateTime', 'pocUnitCode', 'pocName', 'pocMobileNumber', 'reportingLocationId', 'destinationLocationId',
     'preparkQuantity', 'preparkDateTime', 'numberOfDriver', 'wpmAllocatedNumber', 'remarks', 'reasonForChange'
 ]
