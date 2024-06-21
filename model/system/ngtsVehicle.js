@@ -34,6 +34,15 @@ module.exports.NGTSVehicle = dbConf.sequelizeSystemObj.define('ngts_vehicle', {
     baseLineQty: {
         type: DataTypes.INTEGER(4),
     },
+    dateFrom: {
+        type: DataTypes.DATEONLY,
+    },
+    dateTo: {
+        type: DataTypes.DATEONLY,
+    },
+    unavailableReason: {
+        type: DataTypes.STRING(255),
+    },
 }, {
     timestamps: false,
 });

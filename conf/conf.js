@@ -1,5 +1,5 @@
 module.exports.dbServerConf = {
-    host: '192.168.1.3',
+    host: 'localhost',
     user: 'root',
     password: 'root',
     port: 3306,
@@ -50,10 +50,21 @@ module.exports.mobius_server_url = 'http://192.168.1.18:5000'
 
 module.exports.auto_assign = false 
 
+
+// *    *    *    *    *    *
+// ┬    ┬    ┬    ┬    ┬    ┬
+// │    │    │    │    │    │
+// │    │    │    │    │    └ day of week (0 - 7) (0 or 7 is Sun)
+// │    │    │    │    └───── month (1 - 12)
+// │    │    │    └────────── day of month (1 - 31)
+// │    │    └─────────────── hour (0 - 23)
+// │    └──────────────────── minute (0 - 59)
+// └───────────────────────── second (0 - 59, OPTIONAL)
+
 module.exports.scheduleCron = {
     SAVE_VEHICLE: ['0 0 2 * * *'],
-    NGTS_VEHICLE: ['0 0 15 * * *'],
-    NGTS_VEHICLE_AVAIL: ['0 0 15 * * *'],
+    NGTS_VEHICLE: ['0 0 0 1 */1 ?'],
+    NGTS_VEHICLE_AVAIL: ['0 0 17 1 */11 *'],
     NGTS_QNC: ['0 03 17 * * *'],
     NGTS_LOCATION: ['0 08 18 * * *'],
     NGTS_REQ_ACK: ['0 0 3 * * *', '0 0 7 * * *', '0 0 11 * * *', '0 0 15 * * *', '0 0 19 * * *', '0 0 23 * * *'],

@@ -6,6 +6,8 @@ const { NGTSVehicle } = require('../model/system/ngtsVehicle');
 const { Sequelize, Op, QueryTypes } = require('sequelize');
 const moment = require('moment')
 const conf = require('../conf/conf.js');
+const saveVehicleProcess = require('./saveVehicle.js');
+
 
 const sftpUtil = require('../util/sftpUtil');
 
@@ -24,6 +26,8 @@ process.on('message', async processParams => {
 
 const generateVehicleFile = async function (dateformat) {
     try {
+        await saveVehicleProcess.saveVehicle()
+
         let filename = `NGTS_VEHICLE_${dateformat}.csv`
         log.info(`\r\n`)
         log.info(`-------------------Start generate ${filename}-------------------`)

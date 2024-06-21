@@ -33,7 +33,7 @@ process.on('message', async processParams => {
                     c.ngtsId,
                     'P' as type,
                     DATE_FORMAT(b.lastApproveDate,'%Y%m%d') as dateFrom,
-                    DATE_FORMAT(d.ord,'%Y%m%d') as dateTo,
+                    DATE_FORMAT(a.operationallyReadyDate,'%Y%m%d') as dateTo,
                     e.nric as approver,
                     u.unit,
                     a.groupId,
@@ -42,7 +42,6 @@ process.on('message', async processParams => {
                     driver a
                     INNER JOIN driver_platform_conf b ON a.driverId = b.driverId and b.approveStatus = 'Approved'
                     LEFT JOIN vehicle_category c on b.vehicleType = c.vehicleName
-                    LEFT JOIN user d on a.driverId = d.driverId
                     LEFT JOIN user e on b.lastApproveBy = e.userId
                     LEFT JOIN unit u on a.unitId = u.id
                 UNION
@@ -54,7 +53,7 @@ process.on('message', async processParams => {
                     c.ngtsId,
                     'C' as type,
                     DATE_FORMAT(b.createdAt,'%Y%m%d') as dateFrom,
-                    DATE_FORMAT(d.ord,'%Y%m%d') as dateTo,
+                    DATE_FORMAT(a.operationallyReadyDate,'%Y%m%d') as dateTo,
                     e.nric as approver,
                     u.unit,
                     a.groupId,
@@ -63,7 +62,6 @@ process.on('message', async processParams => {
                     driver a
                     INNER JOIN driver_permittype_detail b ON a.driverId = b.driverId
                     LEFT JOIN permittype c ON b.permitType = c.permitType 
-                    LEFT JOIN user d on a.driverId = d.driverId
                     LEFT JOIN user e on b.creator = e.userId
                     LEFT JOIN unit u on a.unitId = u.id
                 ) a 

@@ -74,6 +74,10 @@ const saveVehicle = async function () {
         }
     })
 
+    const dateFrom = moment().startOf('month').format('YYYY-MM-DD')
+    const dateTo = moment().endOf('month').format('YYYY-MM-DD')
+    const today = moment().format('YYYY-MM-DD')
+
     let records = []
     cvVehicleList.forEach(row => {
         let { serviceModeId, typeOfVehicle, status, isInvalid, startDate, endDate, extensionDate } = row
@@ -81,12 +85,23 @@ const saveVehicle = async function () {
         let vehicleStatus = 'A'
         let date = extensionDate ? extensionDate : endDate
 
-        if (status != "Approved" || isInvalid || moment(moment().format('YYYY-MM-DD')).isBefore(moment(startDate))) {
-            vehicleStatus = 'Delete'
-        }
-        else if (moment(moment().format('YYYY-MM-DD')).isAfter(moment(date))) {
+        let availabilityDateFrom = dateFrom
+        let availabilityDateTo = dateTo
+        let unavailableReason = ""
+
+
+        if (status != "Approved" || isInvalid || moment(today).isBefore(moment(startDate))) {
             vehicleStatus = 'D'
         }
+        else if (moment(today).isAfter(moment(date))) {
+            vehicleStatus = 'U'
+            unavailableReason = "Contract  Expiry"
+        }
+
+        if (vehicleStatus == 'A' && moment(today).format('YYYY-MM') == moment(date).format('YYYY-MM')) {
+            availabilityDateTo = date
+        }
+
         let serviceModeList = serviceModeId.split(',')
         // CV
         if (!compareArrays(mvServiceModeIdList, serviceModeList)) {
@@ -104,6 +119,9 @@ const saveVehicle = async function () {
                         serviceModeValue: obj.serviceModeValue,
                         status: vehicleStatus,
                         baseLineQty: 9999,
+                        dateFrom: availabilityDateFrom,
+                        dateTo: availabilityDateTo,
+                        unavailableReason: unavailableReason
                     }
                     records.push(record)
                 }
@@ -113,7 +131,16 @@ const saveVehicle = async function () {
 
     mvVehicleList.forEach(row => {
         let { vehicleName, category, status, baseLineQty, serviceMode } = row
-        let vehicleStatus = status == "disable" ? 'D' : 'A'
+        let vehicleStatus = 'A'
+        let unavailableReason = ""
+        let baseline = baseLineQty || 0
+
+        if (status == "disable") {
+            vehicleStatus = "D"
+        } else if (!baseline) {
+            vehicleStatus = "U"
+            unavailableReason = `Vehicle's baseline has been used up`
+        }
 
         if (serviceMode) {
             let serviceModeList = serviceMode.split(',')
@@ -132,7 +159,10 @@ const saveVehicle = async function () {
                             serviceMode: obj.serviceMode,
                             serviceModeValue: obj.serviceModeValue,
                             status: vehicleStatus,
-                            baseLineQty: baseLineQty ? baseLineQty : 0,
+                            baseLineQty: baseline,
+                            dateFrom: dateFrom,
+                            dateTo: dateTo,
+                            unavailableReason: unavailableReason
                         }
                         records.push(record)
                     }
@@ -148,18 +178,7 @@ const saveVehicle = async function () {
         const t = await sequelizeSystemObj.transaction();
         try {
             for (let row of records) {
-                let { resourceType, group, serviceTypeId, serviceType, serviceModeId, serviceMode, serviceModeValue, status, baseLineQty } = row
-                if (status == 'Delete') {
-                    await NGTSVehicle.destroy({
-                        where: {
-                            resourceType: resourceType,
-                            serviceTypeId: serviceTypeId,
-                            serviceModeId: serviceModeId,
-                        },
-                        transaction: t
-                    })
-                    continue
-                }
+                let { resourceType, group, serviceTypeId, serviceType, serviceModeId, serviceMode, serviceModeValue, status, baseLineQty, dateFrom, dateTo, unavailableReason } = row
 
                 let ngtsVehicle = await NGTSVehicle.findOne({
                     where: {
@@ -179,6 +198,9 @@ const saveVehicle = async function () {
                         group: group,
                         resourceType: resourceType,
                         serviceModeValue: serviceModeValue,
+                        dateFrom: dateFrom,
+                        dateTo: dateTo,
+                        unavailableReason: unavailableReason,
                     }, {
                         where: {
                             id: ngtsVehicle.id
@@ -196,5 +218,6 @@ const saveVehicle = async function () {
         }
     }
 }
+module.exports.saveVehicle = saveVehicle
 
-saveVehicle()
+// saveVehicle()

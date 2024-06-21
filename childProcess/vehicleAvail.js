@@ -6,6 +6,7 @@ const { NGTSVehicle } = require('../model/system/ngtsVehicle');
 const { Sequelize, Op, QueryTypes } = require('sequelize');
 const moment = require('moment')
 const conf = require('../conf/conf.js');
+const saveVehicleProcess = require('./saveVehicle.js');
 
 
 const sftpUtil = require('../util/sftpUtil');
@@ -25,28 +26,29 @@ process.on('message', async processParams => {
 
 const generateVehicleAvailFile = async function (dateformat) {
     try {
+        await saveVehicleProcess.saveVehicle()
+
         let filename = `NGTS_VEHICLE_AVAIL_${dateformat}.csv`
         log.info(`\r\n`)
         log.info(`-------------------Start generate ${filename}-------------------`)
 
-        const dateFrom = moment().startOf('month').format('YYYYMMDD')
-        const dateTo = moment().endOf('month').format('YYYYMMDD')
-
         let vehicleList = await NGTSVehicle.findAll({
             where: {
-                status: 'A'
+                status: {
+                    [Op.or]: ["A", "U"]
+                }
             }
         })
         let data = vehicleList.map(o => {
-            const type = o.baseLineQty == 0 ? 'U' : 'M'
+            const type = o.status == 'U' ? 'U' : 'M'
             const periodFrom = type == 'U' ? 'A' : ''
             const periodTo = type == 'U' ? 'N' : ''
-            const reason = o.baseLineQty == 0 ? `Vehicle's baseline has been used up`: ""
+            const reason = type == 'U' ? o.unavailableReason : ''
             return [
                 o.id,
                 type,
-                dateFrom,
-                dateTo,
+                moment(o.dateFrom).format('YYYYMMDD'),
+                moment(o.dateTo).format('YYYYMMDD'),
                 periodFrom,
                 periodTo,
                 o.baseLineQty,
@@ -67,4 +69,4 @@ const generateVehicleAvailFile = async function (dateformat) {
     }
 }
 
-// generateVehicleAvailFile(moment().format('YYYYMMDDHHmm'))
+generateVehicleAvailFile(moment().format('YYYYMMDDHHmm'))
