@@ -36,8 +36,8 @@ process.on('message', async processParams => {
                     DATE_FORMAT(d.ord,'%Y%m%d') as dateTo,
                     e.nric as approver,
                     u.unit,
-                    u.subUnit,
-                    a.groupId
+                    a.groupId,
+                    ifnull(u.unit, a.groupId) as unitCode
                 FROM
                     driver a
                     INNER JOIN driver_platform_conf b ON a.driverId = b.driverId and b.approveStatus = 'Approved'
@@ -57,8 +57,8 @@ process.on('message', async processParams => {
                     DATE_FORMAT(d.ord,'%Y%m%d') as dateTo,
                     e.nric as approver,
                     u.unit,
-                    u.subUnit,
-                    a.groupId
+                    a.groupId,
+                    ifnull(u.unit, a.groupId) as unitCode
                 FROM
                     driver a
                     INNER JOIN driver_permittype_detail b ON a.driverId = b.driverId
@@ -67,18 +67,18 @@ process.on('message', async processParams => {
                     LEFT JOIN user e on b.creator = e.userId
                     LEFT JOIN unit u on a.unitId = u.id
                 ) a 
-                where a.nric is not null
+                where a.nric is not null and a.unitCode is not null
                 order by a.driverId;`,
             {
                 type: QueryTypes.SELECT
             })
 
         let data = result.map(o => {
-            let { nric, permitStatus, permitType, type, ngtsId, dateFrom, dateTo, approver, unit, subUnit, groupId } = o
+            let { nric, permitStatus, permitType, type, ngtsId, dateFrom, dateTo, approver, unit, groupId } = o
             nric = getNRIC(nric)
             approver = getNRIC(approver)
             let isValid = permitStatus == 'valid' ? 'A' : 'S'
-            let unitCode = getUnitCode(unit, subUnit, groupId, unitCodeList)
+            let unitCode = getUnitCode(unit, groupId, unitCodeList)
             return [
                 nric,
                 dateFrom,
@@ -116,9 +116,9 @@ const getNRIC = function (data) {
     return data || ""
 }
 
-const getUnitCode = function (unit, subUnit, groupId, unitCodeList) {
+const getUnitCode = function (unit, groupId, unitCodeList) {
     if (!groupId) {
-        return `${unit} ${subUnit || ""}`
+        return `${unit}`
     }
 
     let unitCode = unitCodeList.find(item => item.id == groupId)

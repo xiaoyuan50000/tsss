@@ -38,7 +38,7 @@ process.on('message', async processParams => {
 const saveVehicle = async function () {
     let cvVehicleList = await sequelizeSystemObj.query(
         `SELECT
-            DISTINCT a.serviceModeId, c.typeOfVehicle, c.\`status\`, c.isInvalid, a.endDate, a.extensionDate
+            DISTINCT a.serviceModeId, c.typeOfVehicle, c.\`status\`, c.isInvalid, a.startDate, a.endDate, a.extensionDate
         FROM
             contract a
         LEFT JOIN contract_detail b ON a.contractNo = b.contractNo
@@ -76,11 +76,15 @@ const saveVehicle = async function () {
 
     let records = []
     cvVehicleList.forEach(row => {
-        let { serviceModeId, typeOfVehicle, status, isInvalid, endDate, extensionDate } = row
+        let { serviceModeId, typeOfVehicle, status, isInvalid, startDate, endDate, extensionDate } = row
 
         let vehicleStatus = 'A'
         let date = extensionDate ? extensionDate : endDate
-        if (status != "Approved" || isInvalid || moment(moment().format('YYYY-MM-DD')).isAfter(moment(date))) {
+
+        if (status != "Approved" || isInvalid || moment(moment().format('YYYY-MM-DD')).isBefore(moment(startDate))) {
+            vehicleStatus = 'Delete'
+        }
+        else if (moment(moment().format('YYYY-MM-DD')).isAfter(moment(date))) {
             vehicleStatus = 'D'
         }
         let serviceModeList = serviceModeId.split(',')
@@ -128,7 +132,7 @@ const saveVehicle = async function () {
                             serviceMode: obj.serviceMode,
                             serviceModeValue: obj.serviceModeValue,
                             status: vehicleStatus,
-                            baseLineQty: baseLineQty ? baseLineQty : 1,
+                            baseLineQty: baseLineQty ? baseLineQty : 0,
                         }
                         records.push(record)
                     }
@@ -145,6 +149,18 @@ const saveVehicle = async function () {
         try {
             for (let row of records) {
                 let { resourceType, group, serviceTypeId, serviceType, serviceModeId, serviceMode, serviceModeValue, status, baseLineQty } = row
+                if (status == 'Delete') {
+                    await NGTSVehicle.destroy({
+                        where: {
+                            resourceType: resourceType,
+                            serviceTypeId: serviceTypeId,
+                            serviceModeId: serviceModeId,
+                        },
+                        transaction: t
+                    })
+                    continue
+                }
+
                 let ngtsVehicle = await NGTSVehicle.findOne({
                     where: {
                         resourceType: resourceType,

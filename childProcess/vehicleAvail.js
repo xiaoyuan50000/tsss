@@ -29,14 +29,19 @@ const generateVehicleAvailFile = async function (dateformat) {
         log.info(`\r\n`)
         log.info(`-------------------Start generate ${filename}-------------------`)
 
-        const dateFrom = moment().format('YYYY0501')
-        const dateTo = moment().add(1, 'y').format('YYYY0531')
+        const dateFrom = moment().startOf('month').format('YYYYMMDD')
+        const dateTo = moment().endOf('month').format('YYYYMMDD')
 
-        let vehicleList = await NGTSVehicle.findAll()
+        let vehicleList = await NGTSVehicle.findAll({
+            where: {
+                status: 'A'
+            }
+        })
         let data = vehicleList.map(o => {
-            const type = (o.status != 'A' || o.baseLineQty == 0) ? 'U' : 'M'
+            const type = o.baseLineQty == 0 ? 'U' : 'M'
             const periodFrom = type == 'U' ? 'A' : ''
             const periodTo = type == 'U' ? 'N' : ''
+            const reason = o.baseLineQty == 0 ? `Vehicle's baseline has been used up`: ""
             return [
                 o.id,
                 type,
@@ -45,7 +50,7 @@ const generateVehicleAvailFile = async function (dateformat) {
                 periodFrom,
                 periodTo,
                 o.baseLineQty,
-                ''
+                reason
             ]
         })
         data.push([Prefix.Footer, data.length])
