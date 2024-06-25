@@ -23,6 +23,8 @@ const { PurposeServiceType } = require('../model/system/purposeServiceType');
 const { Task2, JobTaskHistory2 } = require('../model/system/task');
 const { TaskAccept } = require('../model/system/taskAccept');
 const { ServiceProvider } = require('../model/system/serviceProvider');
+const { Driver } = require('../model/system/driver');
+const { Vehicle } = require('../model/system/vehicle');
 
 const { CreateJobJson } = require('../json/job-create-json')
 
@@ -509,7 +511,7 @@ const GetCreateModel = async function (createDataList, unitCodeList, recurringMo
 
         if (row.preparkDateTime) {
             let trip = GetPreparkJobModel(requestId, tripNo, row, vehicle, recurringMode, purposeServiceTypeList)
-            let taskList = await GetTaskModel(trip, row, serviceModeList, mobiusSubUnits)
+            let taskList = await GetTaskModel(trip, row, serviceModeList, mobiusSubUnits, true)
             trip.taskList = taskList
             tripList.push(trip)
         }
@@ -526,7 +528,7 @@ const GetCreateModel = async function (createDataList, unitCodeList, recurringMo
     return { indentList, autoAssignedTripNoList }
 }
 
-const GetTaskModel = async function (trip, row, serviceModeList, mobiusSubUnits) {
+const GetTaskModel = async function (trip, row, serviceModeList, mobiusSubUnits, isPrepark = false) {
     let taskQty = trip.noOfVehicle == 0 ? trip.noOfDriver : trip.noOfVehicle
 
     let taskList = []
@@ -603,6 +605,35 @@ const GetTaskModel = async function (trip, row, serviceModeList, mobiusSubUnits)
             remark: '',
             requestorName: row.requestorName,
             unitCode: row.conductingUnitCode,
+        }
+        task.ngtsRespRecord = {
+            // atmsTaskId: task.id,
+            ngtsTripId: trip.tripNo,
+            referenceId: row.referenceId,
+            transacationType: 'R',
+            transacationDateTime: new Date(),
+            responseStatus: 'A',
+            serviceMode: row.serviceMode,
+            resourceId: row.resourceId,
+            resourceQuantity: 1,
+            startDateTime: moment(task.startDate).format("YYYY-MM-DD HH:mm:ss"),
+            endDateTime: task.endDate ? moment(task.endDate).format("YYYY-MM-DD HH:mm:ss") : null,
+            pocUnitCode: row.pocUnitCode,
+            pocName: row.pocName,
+            pocMobileNumber: row.pocMobileNumber,
+            reportingLocationId: row.reportingLocationId,
+            destinationLocationId: row.destinationLocationId,
+            preparkQuantity: isPrepark ? 1 : 0,
+            preparkDateTime: isPrepark ? moment(task.startDate).format("YYYY-MM-DD HH:mm:ss") : null,
+            // ngtsJobId: task.id,
+            ngtsJobStatus: 'U',
+            driverId: null,
+            driverName: "",
+            driverMobileNumber: "",
+            vehicleNumber: "",
+            operatorId: 0,
+            isSend: 'N',
+            trackingId: trackingId
         }
         taskList.push(task)
     }
@@ -836,7 +867,7 @@ const GetEditJobModel = async function (needEditTripNoList, alreadySendDataTasks
                 requestorName: row.requestorName,
                 unitCode: row.conductingUnitCode,
             }
-            let taskList = await GetTaskModel(trip, row, serviceModeList, mobiusSubUnits)
+            let taskList = await GetTaskModel(trip, row, serviceModeList, mobiusSubUnits, true)
             taskList.forEach(o => { o.tripId = job.id })
             trip.taskList = taskList
             newJobList.push(trip)
@@ -928,7 +959,7 @@ const GetCancelModel = async function (cancelDataList) {
     let referenceIdList = cancelDataList.map(o => o.referenceId)
 
     let cancelledAtmsTaskList = await sequelizeSystemObj.query(
-        `select id as tripId, requestId, referenceId, serviceModeId, serviceTypeId, driver from job where referenceId in (?)`,
+        `select id as tripId, requestId, referenceId, serviceModeId, serviceTypeId, driver, tripNo, preParkDate from job where referenceId in (?)`,
         {
             replacements: [referenceIdList],
             type: QueryTypes.SELECT,
@@ -1059,6 +1090,37 @@ const GetCancelModel = async function (cancelDataList) {
                 }
             }
 
+            let { driverName, driverMobileNumber, vehicleNumber } = await getDriverInfo(task)
+            let isPrepark = await getJobPrepark(trip)
+            task.ngtsRespRecord = {
+                atmsTaskId: task.id,
+                ngtsTripId: trip.tripNo,
+                referenceId: trip.referenceId,
+                transacationType: 'R',
+                transacationDateTime: new Date(),
+                responseStatus: 'A',
+                serviceMode: cancelCSVData.serviceMode,
+                resourceId: cancelCSVData.resourceId,
+                resourceQuantity: 1,
+                startDateTime: moment(task.startDate).format("YYYY-MM-DD HH:mm:ss"),
+                endDateTime: task.endDate ? moment(task.endDate).format("YYYY-MM-DD HH:mm:ss") : null,
+                pocUnitCode: cancelCSVData.pocUnitCode,
+                pocName: cancelCSVData.pocName,
+                pocMobileNumber: cancelCSVData.pocMobileNumber,
+                reportingLocationId: cancelCSVData.reportingLocationId,
+                destinationLocationId: cancelCSVData.destinationLocationId,
+                preparkQuantity: isPrepark ? 1 : 0,
+                preparkDateTime: isPrepark ? moment(task.startDate).format("YYYY-MM-DD HH:mm:ss") : null,
+                ngtsJobId: task.id,
+                ngtsJobStatus: 'C',
+                driverId: task.driverId,
+                driverName: driverName,
+                driverMobileNumber: driverMobileNumber,
+                vehicleNumber: vehicleNumber,
+                operatorId: 0,
+                isSend: 'N',
+                trackingId: task.trackingId
+            }
         }
     }
     for (let row of cannotCancelTrips) {
@@ -1496,3 +1558,39 @@ const CopyRecordToHistory = async function (trip) {
     return createdJob.id
 }
 module.exports.CopyRecordToHistory = CopyRecordToHistory
+
+const getDriverInfo = async function (task) {
+    let driverName = ""
+    let driverMobileNumber = ""
+    let vehicleNumber = ""
+    if (task.driverId) {
+        let driver = await Driver.findByPk(task.id)
+        if (driver) {
+            driverName = driver.name
+            driverMobileNumber = driver.contactNumber
+        }
+        let vehicle = await Vehicle.findByPk(task.id)
+        if (vehicle) {
+            vehicleNumber = vehicle.vehicleNumber
+        }
+    }
+    return { driverName, driverMobileNumber, vehicleNumber }
+}
+
+const getJobPrepark = async function (trip) {
+    let isPrepark = false
+    if (trip.preParkDate) {
+        let trip2 = await Job2.findOne({
+            where: {
+                tripNo: trip.tripNo,
+                id: {
+                    [Op.ne]: trip.tripId
+                }
+            }
+        })
+        if (trip2) {
+            isPrepark = trip2.id > trip.tripId
+        }
+    }
+    return isPrepark
+}

@@ -11,6 +11,7 @@ const conf = require('../conf/conf');
 const { Prefix, NGTSFilenamePrefix } = require('../util/content');
 
 const { NGTSReqAck } = require('../model/system/ngtsReqAck');
+const { NGTSResp } = require('../model/system/ngtsResp');
 
 const { Request2 } = require('../model/system/request2');
 const { Job2, OperationHistory } = require('../model/system/job2');
@@ -342,6 +343,11 @@ const createATMSIndentByFile = async function (createIndentList) {
                 taskOperationRecord.tripId = job.id
                 taskOperationRecord.taskId = taskObj.id
                 await OperationHistory.create(taskOperationRecord)
+
+                let ngtsRespRecord = task.ngtsRespRecord
+                ngtsRespRecord.atmsTaskId = taskObj.id
+                ngtsRespRecord.ngtsJobId = taskObj.id
+                await NGTSResp.create(ngtsRespRecord)
             }
         }
     }
@@ -416,6 +422,11 @@ const updateATMSIndentByFile = async function (updateTripList, createTSPList, ex
                 taskOperationRecord.tripId = job.id
                 taskOperationRecord.taskId = taskObj.id
                 await OperationHistory.create(taskOperationRecord)
+
+                let ngtsRespRecord = task.ngtsRespRecord
+                ngtsRespRecord.atmsTaskId = taskObj.id
+                ngtsRespRecord.ngtsJobId = taskObj.id
+                await NGTSResp.create(ngtsRespRecord)
             }
         }
     }
@@ -436,7 +447,7 @@ const cancelATMSIndentByFile = async function (cancelTripList, externalJobIdList
             await OperationHistory.create(jobOperationRecord)
 
             for (let task of tasks) {
-                let { id, taskOperationRecord } = task
+                let { id, taskOperationRecord, ngtsRespRecord } = task
                 await Task2.update({
                     taskStatus: "cancelled",
                     driverId: null,
@@ -450,6 +461,8 @@ const cancelATMSIndentByFile = async function (cancelTripList, externalJobIdList
                 if (taskOperationRecord) {
                     await OperationHistory.create(taskOperationRecord)
                 }
+
+                await NGTSResp.create(ngtsRespRecord)
             }
         }
         if (updateCancelTaskAcceptIdList.length) {

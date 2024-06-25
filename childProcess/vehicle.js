@@ -6,8 +6,8 @@ const { NGTSVehicle } = require('../model/system/ngtsVehicle');
 const { Sequelize, Op, QueryTypes } = require('sequelize');
 const moment = require('moment')
 const conf = require('../conf/conf.js');
-const saveVehicleProcess = require('./saveVehicle.js');
-
+const fs = require('fs');
+const path = require('path');
 
 const sftpUtil = require('../util/sftpUtil');
 
@@ -23,10 +23,43 @@ process.on('message', async processParams => {
     }
 })
 
+const readVehicleConf = function () {
+    const cmd = process.cwd()
+    const configPath = path.join(cmd, '/conf/vehicleConf.json')
+    const configData = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    return configData
+}
+
+const rewriteVehicleConf = function (configData) {
+    let { nextUploadDate, frequency } = configData
+    let newNextUploadDate = moment(nextUploadDate).add(frequency, 'month').format("YYYY-MM")
+
+    let newConf = { "nextUploadDate": newNextUploadDate, "frequency": frequency }
+
+    const cmd = process.cwd()
+    const configPath = path.join(cmd, '/conf/vehicleConf.json')
+    fs.writeFile(configPath, JSON.stringify(newConf), 'utf8', (err) => {
+        if (err) {
+            log.error(err)
+        } else {
+            log.info(`vehicleConf.json file modified successfully.`)
+        }
+    });
+}
+
+const validSatisfyExecConditions = function (configData) {
+    let { nextUploadDate } = configData
+    log.info(`Next Upload Date: ${nextUploadDate}, Current Date: ${moment().format("YYYY-MM")}`)
+    log.info(`NGTS_VEHICLE Satisfy Exec: ${moment().format("YYYY-MM") == nextUploadDate}`)
+    return moment().format("YYYY-MM") == nextUploadDate
+}
 
 const generateVehicleFile = async function (dateformat) {
     try {
-        await saveVehicleProcess.saveVehicle()
+        let configData = readVehicleConf()
+        if (!validSatisfyExecConditions(configData)) {
+            return
+        }
 
         let filename = `NGTS_VEHICLE_${dateformat}.csv`
         log.info(`\r\n`)
@@ -53,7 +86,9 @@ const generateVehicleFile = async function (dateformat) {
             log.info(`-------------------Start Upload ${filename}-------------------`)
             await sftpUtil.uploadFileToFTPServer(filename)
             log.info(`-------------------End Upload ${filename}-------------------`)
+
         }
+        rewriteVehicleConf(configData)
 
         log.info(`-------------------End generate ${conf.SFTPLocalUploadPath + '/' + filename}-------------------`)
         log.info(`\r\n`)

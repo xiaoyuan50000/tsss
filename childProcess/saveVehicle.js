@@ -86,7 +86,7 @@ const saveVehicle = async function () {
         let date = extensionDate ? extensionDate : endDate
 
         let availabilityDateFrom = dateFrom
-        let availabilityDateTo = dateTo
+        let availabilityDateTo = moment().endOf('month').format('YYYY-MM-DD')
         let unavailableReason = ""
 
 
@@ -95,10 +95,10 @@ const saveVehicle = async function () {
         }
         else if (moment(today).isAfter(moment(date))) {
             vehicleStatus = 'U'
-            unavailableReason = "Contract  Expiry"
+            unavailableReason = "Contract Expiry"
         }
 
-        if (vehicleStatus == 'A' && moment(today).format('YYYY-MM') == moment(date).format('YYYY-MM')) {
+        if (vehicleStatus != 'D' && moment(today).format('YYYY-MM') == moment(date).format('YYYY-MM')) {
             availabilityDateTo = date
         }
 
@@ -220,4 +220,4 @@ const saveVehicle = async function () {
 }
 module.exports.saveVehicle = saveVehicle
 
-// saveVehicle()
+saveVehicle()
