@@ -5,6 +5,7 @@ const path = require('path');
 
 const romotePath_in = conf.SFTPRemotePath.in
 const romotePath_out = conf.SFTPRemotePath.out
+const romotePath_history = conf.SFTPRemotePath.history
 
 const SFTPLocalDownloadPath = conf.SFTPLocalDownloadPath
 const SFTPLocalUploadPath = conf.SFTPLocalUploadPath
@@ -94,6 +95,34 @@ const putFilesToSFTPServer = async function (filenameArr) {
     }
 }
 module.exports.putFilesToSFTPServer = putFilesToSFTPServer
+
+const putHistoryFilesToSFTPServer = async function (filePathArr) {
+    let sftp = null
+    try {
+        sftp = await connectSFTPServer()
+
+        log.info(`Put files to SFTP Server, romotePath: ${romotePath_history}`)
+
+        for (let filePath of filePathArr) {
+            log.info(`Put file to SFTP Server, localPath: ${filePath}`)
+            let filename = path.basename(filePath)
+            let targetFile = path.join(romotePath_history, filename)
+            await sftp.fastPut(filePath, targetFile);
+            await sftp.delete(path.join(romotePath_out, filename))
+        }
+        log.info(`Put files to SFTP Server Success`)
+        return { code: 1, err: '' }
+    } catch (ex) {
+        log.error(`Put files to SFTP Server, err: ${ex}`)
+        return { code: 0, err: ex }
+    } finally {
+        if (sftp) {
+            await sftp.end();
+        }
+    }
+}
+module.exports.putHistoryFilesToSFTPServer = putHistoryFilesToSFTPServer
+
 
 const uploadFileToFTPServer = async function (filename) {
     let filePath = path.join(SFTPLocalUploadPath, filename)

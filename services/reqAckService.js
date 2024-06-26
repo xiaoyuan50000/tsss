@@ -75,6 +75,7 @@ const ValidTripData = async function (fileDatas) {
     })
     let vehicleList = await NGTSVehicle.findAll()
     let purposeModeList = await PurposeMode.findAll()
+    let unitCodeList = await Group.findAll()
 
 
     for (let list of fileDatas) {
@@ -207,6 +208,13 @@ const ValidTripData = async function (fileDatas) {
             let purposeMode = purposeModeList.find(o => o.ngtsId == purposeNGTSId)
             if (!purposeMode) {
                 error.push({ referenceId, lineNumber, errorCode: ErrorEnum.Purpose_NOTEXIST.code, errorMessage: ErrorEnum.Purpose_NOTEXIST.message })
+            }
+
+            let unitCode = unitCodeList.find(o => o.groupName == conductingUnitCode.trim())
+            if (!unitCode) {
+                error.push({ referenceId, lineNumber, errorCode: ErrorEnum.Conducting_Unit_Code_NOTEXIST.code, errorMessage: ErrorEnum.Conducting_Unit_Code_NOTEXIST.message })
+            } else {
+                data.conductingUnitCode = conductingUnitCode.trim()
             }
 
             if (error.length == 0) {
@@ -376,6 +384,7 @@ const GetJobModel = function (requestId, tripNo, row, vehicle, recurringMode, pu
     }
     let trip = {
         requestId: requestId,
+        instanceId: -1,
         tripNo: tripNo,
         referenceId: row.referenceId,
         status: 'Approved',

@@ -47,6 +47,7 @@ class ErrorEnum extends Enum {
     static NGTS_Resource_ID_NOTEXIST = new ErrorEnum(30004, 'NGTS_Resource_ID does not exist.')
     static ATMs_Reference_ID_NOTEXIST = new ErrorEnum(30005, 'ATMs_Reference_ID does not exist.')
     static Purpose_NOTEXIST = new ErrorEnum(30006, 'Purpose does not exist.')
+    static Conducting_Unit_Code_NOTEXIST = new ErrorEnum(30007, 'Conducting Unit Code does not exist.')
     
     static Prepark_Quantity_Error = new ErrorEnum(40001, 'Prepark_Quantity should be less than or equal to Resource_Quantity.')
     static Number_of_Driver_Error = new ErrorEnum(40002, 'Number_of_Driver should be less than or equal to Resource_Quantity.')

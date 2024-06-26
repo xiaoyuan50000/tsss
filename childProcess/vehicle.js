@@ -63,10 +63,10 @@ const validSatisfyExecConditions = function (configData, verify) {
 }
 
 const generateVehicleFile = async function (dateformat, verifyDate = false) {
-    let configData = readVehicleConf()
-    if (!validSatisfyExecConditions(configData, verifyDate)) {
-        return
-    }
+    // let configData = readVehicleConf()
+    // if (!validSatisfyExecConditions(configData, verifyDate)) {
+    //     return
+    // }
 
     let filename = `NGTS_VEHICLE_${dateformat}.csv`
     log.info(`\r\n`)
@@ -94,7 +94,7 @@ const generateVehicleFile = async function (dateformat, verifyDate = false) {
         await sftpUtil.uploadFileToFTPServer(filename)
         log.info(`-------------------End Upload ${filename}-------------------`)
     }
-    rewriteVehicleConf(configData, verifyDate)
+    // rewriteVehicleConf(configData, verifyDate)
 
     log.info(`-------------------End generate ${conf.SFTPLocalUploadPath + '/' + filename}-------------------`)
     log.info(`\r\n`)

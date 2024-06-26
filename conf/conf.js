@@ -63,7 +63,7 @@ module.exports.auto_assign = false
 
 module.exports.scheduleCron = {
     SAVE_VEHICLE: ['0 0 2 * * *'],
-    NGTS_VEHICLE: ['0 0 3 1 * *'],
+    NGTS_VEHICLE: ['0 0 3 * * *'],
     NGTS_VEHICLE_AVAIL: ['0 0 3 1 * *'],
     NGTS_QNC: ['0 0 15 * * *'],
     NGTS_LOCATION: ['0 0 15 * * *'],
@@ -77,10 +77,11 @@ module.exports.SFTPLocalUploadPath = "F:/SFTP/Upload"
 module.exports.SFTPRemotePath = {
     in: '/in/',
     out: '/out/',
+    history: '/in/history',
 }
 
 module.exports.SFTPConf = {
-    host: '192.168.1.3',
+    host: '192.168.1.8',
     port: '22',
     username: 'ngts',
     password: '123456',

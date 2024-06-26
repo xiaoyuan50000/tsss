@@ -82,6 +82,8 @@ process.on('message', async processParams => {
             fileDatas.push(filedata)
         }
         await processReqAckFileDatas(fileDatas)
+
+        await sftpUtil.putHistoryFilesToSFTPServer(result.data)
         // let tripDatas = await reqAckService.ValidTripData(fileDatas)
 
         // let reqAckList = reqAckService.GetReqAckModel(tripDatas)
