@@ -4,8 +4,17 @@ const multer = require('multer');
 const path = require('path');
 const moment = require('moment');
 const conf = require('../conf/conf');
-const reqAck = require('../childProcess/reqAck.js')
+const reqAckChildPress = require('../childProcess/reqAck.js')
+const locationChildPress = require('../childProcess/location.js')
+const qncChildPress = require('../childProcess/qnc.js')
+const vehicleChildPress = require('../childProcess/vehicle.js')
+const vehicleAvailChildPress = require('../childProcess/vehicleAvail.js')
+const respChildPress = require('../childProcess/resp.js')
+const saveVehicleChildPress = require('../childProcess/saveVehicle.js')
 const utils = require('../util/utils');
+const Response = require('../util/response.js');
+const log = require('../log/winston').logger('Router Index');
+const fs = require('fs')
 
 let router = express.Router();
 
@@ -27,20 +36,78 @@ const upload = multer({ storage: storage });
 router.post('/upload/indent', upload.single('file'), async function (req, res, next) {
     const file = req.file;
     const filePath = utils.getSafeFileName(file.path)
-    let filedata = await reqAck.readCSVFileData(filePath)
-    let result = await reqAck.processReqAckFileDatas([filedata])
+    let filedata = await reqAckChildPress.readCSVFileData(filePath)
+    let result = await reqAckChildPress.processReqAckFileDatas([filedata])
     if (result.length) {
-        return res.json({
-            code: 0,
-            msg: `There are ${result.length} incorrect data`,
-            data: null
-        })
+        return Response.error(res, `There are ${result.length} incorrect data`)
     }
-    return res.json({
-        code: 1,
-        msg: 'Success',
-        data: null
-    });
+    return Response.success(res)
 });
+
+router.get('/api/:file/csv', async function (req, res, next) {
+    try {
+        let file = req.params.file
+
+        let dateformat = moment().format('YYYYMMDDHHmm')
+        let result = null
+        switch (file) {
+            case 'location':
+                result = await locationChildPress.generateLocation(dateformat)
+                break;
+            case 'qnc':
+                result = await qncChildPress.generateQNC(dateformat)
+                break;
+            case 'vehicle':
+                result = await vehicleChildPress.generateVehicleFile(dateformat)
+                break;
+            case 'vehicleAvail':
+                result = await vehicleAvailChildPress.generateVehicleAvailFile(dateformat)
+                break;
+            case 'reqAck':
+                result = await reqAckChildPress.generateReqAck(dateformat)
+                break;
+            case 'resp':
+                result = await respChildPress.generateRespFile(dateformat)
+                break;
+            default:
+                result = { code: 100, filename: "" }
+                break
+        }
+
+        let code = result.code
+        let filename = result.filename
+
+        if (code == 1) {
+            downloadFile(res, filename)
+        } else if (code == 100) {
+            return Response.error(res, `404 Cannot find this Api`)
+        } else {
+            return Response.error(res, `Api error`)
+        }
+    } catch (ex) {
+        log.error(ex)
+        return Response.error(res, `Api error`)
+    }
+})
+
+router.get('/api/saveVehicle', async function (req, res, next) {
+    try {
+        await saveVehicleChildPress.saveVehicle()
+        return Response.success(res)
+    } catch (ex) {
+        log.error(ex)
+        return Response.error(res, `Api error`)
+    }
+})
+
+const downloadFile = function (res, filename) {
+    let filePath = path.join(conf.SFTPLocalUploadPath, filename)
+    let rs = fs.createReadStream(filePath);
+    res.writeHead(200, {
+        'Content-Type': 'application/force-download',
+        'Content-Disposition': 'attachment; filename=' + filename
+    });
+    rs.pipe(res);
+}
 
 module.exports = router;

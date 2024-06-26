@@ -1210,9 +1210,9 @@ const SaveReqAckFile = async function (dateformat) {
     ngtsReqAckDatas.unshift([Prefix.Header, ngtsReqAckDatas.length]);
 
     let filename = NGTSFilenamePrefix.NGTS_REQ_ACK + dateformat + '.csv'
-    await csvUtil.write(filename, ngtsReqAckDatas)
+    let { code } = await csvUtil.write(filename, ngtsReqAckDatas)
 
-    return filename
+    return { code, filename }
 }
 module.exports.SaveReqAckFile = SaveReqAckFile
 
@@ -1225,8 +1225,8 @@ const SaveRespFile = async function (dateformat) {
     )
     let ngtsRespDatas = ngtsRespList.map(o => {
         return [
-            o.ngtsTripId,
             o.referenceId,
+            o.ngtsTripId,
             o.transacationType,
             convertDateTimeStr(o.transacationDateTime),
             o.responseStatus,
@@ -1252,9 +1252,9 @@ const SaveRespFile = async function (dateformat) {
     ngtsRespDatas.push([Prefix.Footer, ngtsRespDatas.length]);
 
     let filename = NGTSFilenamePrefix.NGTS_RESP + dateformat + '.csv'
-    await csvUtil.write(filename, ngtsRespDatas)
+    let { code } = await csvUtil.write(filename, ngtsRespDatas)
 
-    return filename
+    return { code, filename }
 }
 module.exports.SaveRespFile = SaveRespFile
 

@@ -23,46 +23,48 @@ process.on('message', async processParams => {
 
 
 const generateVehicleAvailFile = async function (dateformat) {
-    try {
-        let filename = `NGTS_VEHICLE_AVAIL_${dateformat}.csv`
-        log.info(`\r\n`)
-        log.info(`-------------------Start generate ${filename}-------------------`)
 
-        let vehicleList = await NGTSVehicle.findAll({
-            where: {
-                status: {
-                    [Op.or]: ["A", "U"]
-                }
+    let filename = `NGTS_VEHICLE_AVAIL_${dateformat}.csv`
+    log.info(`\r\n`)
+    log.info(`-------------------Start generate ${filename}-------------------`)
+
+    let vehicleList = await NGTSVehicle.findAll({
+        where: {
+            status: {
+                [Op.or]: ["A", "U"]
             }
-        })
-        let data = vehicleList.map(o => {
-            const type = o.status == 'U' ? 'U' : 'M'
-            const periodFrom = type == 'U' ? 'A' : ''
-            const periodTo = type == 'U' ? 'N' : ''
-            const reason = type == 'U' ? o.unavailableReason : ''
-            return [
-                o.id,
-                type,
-                moment(o.dateFrom).format('YYYYMMDD'),
-                moment(o.dateTo).format('YYYYMMDD'),
-                periodFrom,
-                periodTo,
-                o.baseLineQty,
-                reason
-            ]
-        })
-        data.push([Prefix.Footer, data.length])
-        let { code } = await csvUtil.write(filename, data)
-        if (code == 1) {
-            await sftpUtil.uploadFileToFTPServer(filename)
         }
-
-        log.info(`-------------------End generate ${conf.SFTPLocalUploadPath + '/' + filename}-------------------`)
+    })
+    let data = vehicleList.map(o => {
+        const type = o.status == 'U' ? 'U' : 'M'
+        const periodFrom = type == 'U' ? 'A' : ''
+        const periodTo = type == 'U' ? 'N' : ''
+        const reason = type == 'U' ? o.unavailableReason : ''
+        return [
+            o.id,
+            type,
+            moment(o.dateFrom).format('YYYYMMDD'),
+            moment(o.dateTo).format('YYYYMMDD'),
+            periodFrom,
+            periodTo,
+            o.baseLineQty,
+            reason
+        ]
+    })
+    data.push([Prefix.Footer, data.length])
+    let { code } = await csvUtil.write(filename, data)
+    if (code == 1) {
         log.info(`\r\n`)
-
-    } catch (error) {
-        log.error(error);
+        log.info(`-------------------Start Upload ${filename}-------------------`)
+        await sftpUtil.uploadFileToFTPServer(filename)
+        log.info(`\r\n`)
+        log.info(`-------------------End Upload ${filename}-------------------`)
     }
+
+    log.info(`-------------------End generate ${conf.SFTPLocalUploadPath + '/' + filename}-------------------`)
+    log.info(`\r\n`)
+    return { code, filename }
 }
+module.exports.generateVehicleAvailFile = generateVehicleAvailFile
 
 // generateVehicleAvailFile(moment().format('YYYYMMDDHHmm'))

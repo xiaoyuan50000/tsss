@@ -10,12 +10,7 @@ const sftpUtil = require('../util/sftpUtil');
 process.on('message', async processParams => {
     try {
         let dateformat = csvUtil.getFileNameDateFormat(processParams.cron)
-        let respFile = await reqAckService.SaveRespFile(dateformat)
-
-        let { code } = await sftpUtil.uploadFileToFTPServer(respFile)
-        if (code == 1) {
-            await reqAckService.updateRespSendData()
-        }
+        await generateRespFile(dateformat)
         process.send({ success: true })
 
     } catch (error) {
@@ -23,3 +18,19 @@ process.on('message', async processParams => {
         process.send({ success: false, error })
     }
 })
+
+const generateRespFile = async function (dateformat) {
+    log.info(`\r\n`)
+    let { code, filename } = await reqAckService.SaveRespFile(dateformat)
+
+    if (code == 1) {
+        log.info(`\r\n`)
+        log.info(`-------------------Start Upload ${filename}-------------------`)
+        await sftpUtil.uploadFileToFTPServer(filename)
+        log.info(`-------------------End Upload ${filename}-------------------`)
+        log.info(`\r\n`)
+        await reqAckService.updateRespSendData()
+    }
+    return { code, filename }
+}
+module.exports.generateRespFile = generateRespFile

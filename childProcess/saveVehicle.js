@@ -220,4 +220,4 @@ const saveVehicle = async function () {
 }
 module.exports.saveVehicle = saveVehicle
 
-saveVehicle()
+// saveVehicle()

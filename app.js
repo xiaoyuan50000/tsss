@@ -67,6 +67,8 @@ qncSchedule.qncScheduleStart()
 const vehicleAvailSchedule = require('./schedule/vehicleAvailSchedule');
 vehicleAvailSchedule.vehicleAvailScheduleStart()
 
+const respSchedule = require('./schedule/respSchedule');
+respSchedule.respScheduleStart()
 
 process.on('uncaughtException', function (e) {
     log.error(`uncaughtException`)

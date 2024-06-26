@@ -39,16 +39,28 @@ const readCSVFileData = async function (file) {
 }
 module.exports.readCSVFileData = readCSVFileData
 
+
+const generateReqAck = async function (dateformat) {
+    log.info(`\r\n`)
+    let { code, filename } = await reqAckService.SaveReqAckFile(dateformat)
+
+    if (code == 1) {
+        log.info(`\r\n`)
+        log.info(`-------------------Start Upload ${filename}-------------------`)
+        await sftpUtil.uploadFileToFTPServer(filename)
+        log.info(`-------------------End Upload ${filename}-------------------`)
+        log.info(`\r\n`)
+        await reqAckService.updateReqAckSendData()
+    }
+    return { code, filename }
+}
+module.exports.generateReqAck = generateReqAck
+
 process.on('message', async processParams => {
     try {
 
         let dateformat = csvUtil.getFileNameDateFormat(processParams.cron)
-        let reqAckFile = await reqAckService.SaveReqAckFile(dateformat)
-
-        let { code } = await sftpUtil.uploadFileToFTPServer(reqAckFile)
-        if (code == 1) {
-            await reqAckService.updateReqAckSendData()
-        }
+        await generateReqAck(dateformat)
 
 
         let result = await sftpUtil.listFileFormFTPServer()
