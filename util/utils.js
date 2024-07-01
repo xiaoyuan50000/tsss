@@ -43,7 +43,7 @@ const GenerateIndentID = function () {
 module.exports.GenerateIndentID = GenerateIndentID
 
 module.exports.GetTrackingId = function (requestId) {
-    return requestId + "-" + Number(Date.now() + '' + Math.floor(Math.random() * 100)).toString(32).toUpperCase()
+    return requestId.substr(5) + "-" + Number(Date.now() + '' + Math.floor(Math.random() * 100)).toString(32).toUpperCase()
 }
 
 module.exports.FormatToUtcOffset8 = function (date) {

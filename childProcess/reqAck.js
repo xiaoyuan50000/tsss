@@ -42,17 +42,20 @@ module.exports.readCSVFileData = readCSVFileData
 
 const generateReqAck = async function (dateformat) {
     log.info(`\r\n`)
-    let { code, filename } = await reqAckService.SaveReqAckFile(dateformat)
+    let generateFiles = await reqAckService.SaveReqAckFile(dateformat)
+    for (let file of generateFiles) {
+        let { code, filename } = file
+        if (code == 1) {
+            log.info(`\r\n`)
+            log.info(`-------------------Start Upload ${filename}-------------------`)
+            await sftpUtil.uploadFileToFTPServer(filename)
+            log.info(`-------------------End Upload ${filename}-------------------`)
+            log.info(`\r\n`)
+            await reqAckService.updateReqAckSendData()
+        }
 
-    if (code == 1) {
-        log.info(`\r\n`)
-        log.info(`-------------------Start Upload ${filename}-------------------`)
-        await sftpUtil.uploadFileToFTPServer(filename)
-        log.info(`-------------------End Upload ${filename}-------------------`)
-        log.info(`\r\n`)
-        await reqAckService.updateReqAckSendData()
     }
-    return { code, filename }
+    return { code: 1 }
 }
 module.exports.generateReqAck = generateReqAck
 
@@ -329,7 +332,7 @@ const processReqAckFileDatas = async function (fileDatas) {
             let tripIdList = tripList.map(o => o.id)
             await utils.SendTripToMobiusServer(tripIdList)
         }
-        return reqAckList
+        return reqAckList.filter(o => o.referenceId != 'HH')
     } catch (error) {
         log.error(error);
         return []

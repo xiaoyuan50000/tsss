@@ -36,7 +36,7 @@ const generateVehicleAvailFile = async function (dateformat) {
         }
     })
     let data = vehicleList.map(o => {
-        const type = o.status == 'U' ? 'U' : 'M'
+        const type = (o.status == 'U' || o.baseLineQty == 0) ? 'U' : 'M'
         const periodFrom = type == 'U' ? 'A' : ''
         const periodTo = type == 'U' ? 'N' : ''
         const reason = type == 'U' ? o.unavailableReason : ''

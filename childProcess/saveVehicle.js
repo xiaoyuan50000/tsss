@@ -138,7 +138,6 @@ const saveVehicle = async function () {
         if (status == "disable") {
             vehicleStatus = "D"
         } else if (!baseline) {
-            vehicleStatus = "U"
             unavailableReason = `Vehicle's baseline has been used up`
         }
 

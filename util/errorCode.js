@@ -58,6 +58,8 @@ class ErrorEnum extends Enum {
 
     static Incorrect_NoOfRecords_Error = new ErrorEnum(60001, 'Incorrect number of footer records.')
 
+    static Conducting_Unit_Code_ERROR = new ErrorEnum(70001, 'Conducting Unit Code does not contain NGTS Resource Type.')
+
 }
 
 module.exports.ErrorEnum = ErrorEnum

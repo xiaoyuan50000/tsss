@@ -12,13 +12,15 @@ module.exports.dbSystemConf = {
     user: 'root',
     password: 'root',
     port: 3306,
-    database: 'tms3',
+    database: 'tms4',
     timezone: 'GMT%2B8',
     multipleStatements: true,
     connectionLimit: 500
 };
 
 module.exports.port = 5022
+
+module.exports.serverPortHttps = 443
 
 module.exports.client_id = '07c5b4b3c04e43'
 

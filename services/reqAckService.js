@@ -83,6 +83,7 @@ const ValidTripData = async function (fileDatas) {
         let lineNumber = 1
         let validDataList = []
         let errorDataList = []
+        let recordNumber = 0
         for (let data of datas) {
             let error = []
             let { tripId, referenceId, transacationType, transacationDateTime, requestorName,
@@ -91,6 +92,7 @@ const ValidTripData = async function (fileDatas) {
                 preparkQuantity, preparkDateTime, numberOfDriver, wpmAllocatedNumber, remarks, reasonForChange } = data
 
             if (referenceId == "FF") {
+                recordNumber = Number(tripId)
                 break
             }
             if (!referenceId || !conductingUnitCode || !purposeNGTSId || !serviceMode || !resourceId || !startDateTime || !endDateTime || !pocName || !pocMobileNumber
@@ -217,6 +219,10 @@ const ValidTripData = async function (fileDatas) {
                 data.conductingUnitCode = conductingUnitCode.trim()
             }
 
+            if (vehicle && unitCode && unitCode.serviceType.split(',').indexOf(vehicle.serviceTypeId.toString()) == -1) {
+                error.push({ referenceId, lineNumber, errorCode: ErrorEnum.Conducting_Unit_Code_ERROR.code, errorMessage: ErrorEnum.Conducting_Unit_Code_ERROR.message })
+            }
+
             if (error.length == 0) {
                 data.transacationDateTime = convertDate(data.transacationDateTime)
                 data.startDateTime = convertDate(data.startDateTime)
@@ -237,7 +243,7 @@ const ValidTripData = async function (fileDatas) {
             lineNumber += 1
         }
 
-        result.push({ filename, validDataList, errorDataList })
+        result.push({ filename, validDataList, errorDataList, lineNumber: recordNumber })
     }
     return result
 }
@@ -247,11 +253,12 @@ module.exports.ValidTripData = ValidTripData
 module.exports.GetReqAckModel = function (datas) {
     let result = []
     for (let data of datas) {
-        let { filename, errorDataList } = data
+        let { filename, errorDataList, lineNumber } = data
         errorDataList.forEach((row) => {
             row.fromFile = filename
             result.push(row)
         })
+        result.push({ referenceId: "HH", lineNumber: lineNumber, fromFile: filename })
     }
     return result
 }
@@ -1213,15 +1220,30 @@ const SaveReqAckFile = async function (dateformat) {
             type: QueryTypes.SELECT,
         }
     )
-    let ngtsReqAckDatas = ngtsReqAckList.map(o => {
-        return [o.lineNumber, o.errorCode]
-    })
-    ngtsReqAckDatas.unshift([Prefix.Header, ngtsReqAckDatas.length]);
+    let generateFiles = []
 
-    let filename = NGTSFilenamePrefix.NGTS_REQ_ACK + dateformat + '.csv'
-    let { code } = await csvUtil.write(filename, ngtsReqAckDatas)
+    if (ngtsReqAckList.length == 0) {
+        let filename = NGTSFilenamePrefix.NGTS_REQ_ACK + dateformat + '.csv'
+        let { code } = await csvUtil.write(filename, [[Prefix.Header, 0]])
+        generateFiles.push({ code, filename })
+        return generateFiles
+    }
 
-    return { code, filename }
+    let fromFileArr = [...new Set(ngtsReqAckList.map(o => o.fromFile))]
+    for (let fromFile of fromFileArr) {
+        dateformat = Number(dateformat) + 1
+        let ngtsReqAckDatas = ngtsReqAckList.filter(o => o.fromFile == fromFile && o.referenceId != 'HH').map(o => {
+            return [o.lineNumber, o.errorCode]
+        })
+
+        let reqLineRecord = ngtsReqAckList.find(o => o.fromFile == fromFile && o.referenceId == 'HH')
+        ngtsReqAckDatas.unshift([Prefix.Header, reqLineRecord ? reqLineRecord.lineNumber : 0]);
+
+        let filename = NGTSFilenamePrefix.NGTS_REQ_ACK + dateformat + '.csv'
+        let { code } = await csvUtil.write(filename, ngtsReqAckDatas)
+        generateFiles.push({ code, filename })
+    }
+    return generateFiles
 }
 module.exports.SaveReqAckFile = SaveReqAckFile
 

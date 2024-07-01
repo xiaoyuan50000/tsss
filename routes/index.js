@@ -14,7 +14,6 @@ const saveVehicleChildPress = require('../childProcess/saveVehicle.js')
 const utils = require('../util/utils');
 const Response = require('../util/response.js');
 const log = require('../log/winston').logger('Router Index');
-const fs = require('fs')
 
 let router = express.Router();
 
@@ -75,10 +74,9 @@ router.get('/api/:file/csv', async function (req, res, next) {
         }
 
         let code = result.code
-        let filename = result.filename
 
         if (code == 1) {
-            downloadFile(res, filename)
+            return Response.success(res)
         } else if (code == 100) {
             return Response.error(res, `404 Cannot find this Api`)
         } else {
@@ -99,15 +97,5 @@ router.get('/api/saveVehicle', async function (req, res, next) {
         return Response.error(res, `Api error`)
     }
 })
-
-const downloadFile = function (res, filename) {
-    let filePath = path.join(conf.SFTPLocalUploadPath, filename)
-    let rs = fs.createReadStream(filePath);
-    res.writeHead(200, {
-        'Content-Type': 'application/force-download',
-        'Content-Disposition': 'attachment; filename=' + filename
-    });
-    rs.pipe(res);
-}
 
 module.exports = router;
