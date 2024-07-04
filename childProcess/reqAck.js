@@ -284,6 +284,8 @@ const processReqAckFileDatas = async function (fileDatas) {
 
         let tripDatas = await reqAckService.ValidTripData(fileDatas)
 
+        let respInvalidDataList = getRespInvalidDatas(tripDatas)
+
         let reqAckList = reqAckService.GetReqAckModel(tripDatas)
 
         let { createIndentList, updateTripList, cancelTripList, createErrorReqAckList, autoAssignedList } = await reqAckService.GetTripModel(tripDatas)
@@ -292,8 +294,11 @@ const processReqAckFileDatas = async function (fileDatas) {
         let externalJobIdList = [] // externalJobId
         let createTSPList = [] // { trackingId, allocateeId, tspName, requestor }
         await sequelizeSystemObj.transaction(async (t1) => {
-            if (reqAckList.length) {
+            if (reqAckList.length > 0) {
                 await NGTSReqAck.bulkCreate(reqAckList)
+            }
+            if (respInvalidDataList.length > 0) {
+                await NGTSResp.bulkCreate(respInvalidDataList)
             }
 
             // create
@@ -340,6 +345,16 @@ const processReqAckFileDatas = async function (fileDatas) {
 }
 module.exports.processReqAckFileDatas = processReqAckFileDatas
 
+const getRespInvalidDatas = function (tripDatas) {
+    let respInvalidDataList = []
+    for (let item of tripDatas) {
+        if (item.respInvalidDataList.length > 0) {
+            respInvalidDataList.push(...item.respInvalidDataList)
+        }
+    }
+    return respInvalidDataList
+}
+
 const createATMSIndentByFile = async function (createIndentList) {
     for (let row of createIndentList) {
         log.info(JSON.stringify(row, null, 2))
@@ -353,6 +368,11 @@ const createATMSIndentByFile = async function (createIndentList) {
             tripOperationRecord.tripId = job.id
             await OperationHistory.create(tripOperationRecord)
 
+            let ngtsRespRecord = trip.ngtsRespRecord
+            ngtsRespRecord.atmsTaskId = job.id
+            ngtsRespRecord.ngtsJobId = job.id
+            await NGTSResp.create(ngtsRespRecord)
+
             for (let task of taskList) {
                 task.tripId = job.id
                 let taskOperationRecord = task.taskOperationRecord
@@ -361,10 +381,6 @@ const createATMSIndentByFile = async function (createIndentList) {
                 taskOperationRecord.taskId = taskObj.id
                 await OperationHistory.create(taskOperationRecord)
 
-                let ngtsRespRecord = task.ngtsRespRecord
-                ngtsRespRecord.atmsTaskId = taskObj.id
-                ngtsRespRecord.ngtsJobId = taskObj.id
-                await NGTSResp.create(ngtsRespRecord)
             }
         }
     }
@@ -432,6 +448,11 @@ const updateATMSIndentByFile = async function (updateTripList, createTSPList, ex
                 await OperationHistory.bulkCreate(oldOperationHistoryList)
             }
 
+            let ngtsRespRecord = trip.ngtsRespRecord
+            ngtsRespRecord.atmsTaskId = job.id
+            ngtsRespRecord.ngtsJobId = job.id
+            await NGTSResp.create(ngtsRespRecord)
+
             for (let task of taskList) {
                 task.tripId = job.id
                 let taskOperationRecord = task.taskOperationRecord
@@ -440,10 +461,6 @@ const updateATMSIndentByFile = async function (updateTripList, createTSPList, ex
                 taskOperationRecord.taskId = taskObj.id
                 await OperationHistory.create(taskOperationRecord)
 
-                let ngtsRespRecord = task.ngtsRespRecord
-                ngtsRespRecord.atmsTaskId = taskObj.id
-                ngtsRespRecord.ngtsJobId = taskObj.id
-                await NGTSResp.create(ngtsRespRecord)
             }
         }
     }
@@ -453,7 +470,7 @@ const cancelATMSIndentByFile = async function (cancelTripList, externalJobIdList
     for (let row of cancelTripList) {
         let { needCancelTrips, sendCancelJobList, updateCancelTaskAcceptIdList } = row
         for (let trip of needCancelTrips) {
-            let { tripId, jobOperationRecord, tasks } = trip
+            let { tripId, jobOperationRecord, tasks, ngtsRespRecord } = trip
             await Job2.update({
                 status: "Cancelled"
             }, {
@@ -462,9 +479,10 @@ const cancelATMSIndentByFile = async function (cancelTripList, externalJobIdList
                 }
             })
             await OperationHistory.create(jobOperationRecord)
+            await NGTSResp.create(ngtsRespRecord)
 
             for (let task of tasks) {
-                let { id, taskOperationRecord, ngtsRespRecord } = task
+                let { id, taskOperationRecord } = task
                 await Task2.update({
                     taskStatus: "cancelled",
                     driverId: null,
@@ -479,7 +497,6 @@ const cancelATMSIndentByFile = async function (cancelTripList, externalJobIdList
                     await OperationHistory.create(taskOperationRecord)
                 }
 
-                await NGTSResp.create(ngtsRespRecord)
             }
         }
         if (updateCancelTaskAcceptIdList.length) {

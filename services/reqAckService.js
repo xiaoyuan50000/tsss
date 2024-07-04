@@ -61,7 +61,7 @@ const ValidTripData = async function (fileDatas) {
         let lastRow = datas.find(o => o.referenceId == "FF")
         if (lastRow && Number(lastRow.tripId) != datas.length - 1 || !lastRow) {
             errorDataList.push({ referenceId: null, lineNumber: datas.length, errorCode: ErrorEnum.Incorrect_NoOfRecords_Error.code, errorMessage: ErrorEnum.Incorrect_NoOfRecords_Error.message })
-            result.push({ filename, validDataList, errorDataList })
+            result.push({ filename, validDataList, errorDataList, respInvalidDataList: [], lineNumber: 0 })
         }
     }
     if (result.length) {
@@ -83,10 +83,11 @@ const ValidTripData = async function (fileDatas) {
         let lineNumber = 1
         let validDataList = []
         let errorDataList = []
+        let respInvalidDataList = []
         let recordNumber = 0
         for (let data of datas) {
             let error = []
-            let { tripId, referenceId, transacationType, transacationDateTime, requestorName,
+            let { referenceId, tripId, transacationType, transacationDateTime, requestorName,
                 trainingActivityName, conductingUnitCode, purposeNGTSId, serviceMode, resourceId, resourceQuantity, startDateTime,
                 endDateTime, pocUnitCode, pocName, pocMobileNumber, reportingLocationId, destinationLocationId,
                 preparkQuantity, preparkDateTime, numberOfDriver, wpmAllocatedNumber, remarks, reasonForChange } = data
@@ -221,6 +222,7 @@ const ValidTripData = async function (fileDatas) {
 
             if (vehicle && unitCode && unitCode.serviceType.split(',').indexOf(vehicle.serviceTypeId.toString()) == -1) {
                 error.push({ referenceId, lineNumber, errorCode: ErrorEnum.Conducting_Unit_Code_ERROR.code, errorMessage: ErrorEnum.Conducting_Unit_Code_ERROR.message })
+                pushInvalidRespData(respInvalidDataList, data)
             }
 
             if (error.length == 0) {
@@ -243,12 +245,49 @@ const ValidTripData = async function (fileDatas) {
             lineNumber += 1
         }
 
-        result.push({ filename, validDataList, errorDataList, lineNumber: recordNumber })
+        result.push({ filename, validDataList, errorDataList, respInvalidDataList, lineNumber: recordNumber })
     }
     return result
 }
 
 module.exports.ValidTripData = ValidTripData
+
+
+const pushInvalidRespData = function (respInvalidDataList, data) {
+    let { tripId, referenceId, serviceMode, resourceId, resourceQuantity, startDateTime,
+        endDateTime, pocUnitCode, pocName, pocMobileNumber, reportingLocationId, destinationLocationId,
+        preparkQuantity, preparkDateTime } = data
+
+    respInvalidDataList.push({
+        atmsTaskId: null,
+        ngtsTripId: tripId,
+        referenceId: referenceId,
+        transacationType: 'R',
+        transacationDateTime: new Date(),
+        responseStatus: 'I',
+        serviceMode: serviceMode,
+        resourceId: resourceId,
+        resourceQuantity: resourceQuantity,
+        startDateTime: moment(convertDate(startDateTime)).format("YYYY-MM-DD HH:mm:ss"),
+        endDateTime: moment(convertDate(endDateTime)).format("YYYY-MM-DD HH:mm:ss"),
+        pocUnitCode: pocUnitCode,
+        pocName: pocName,
+        pocMobileNumber: pocMobileNumber,
+        reportingLocationId: reportingLocationId,
+        destinationLocationId: destinationLocationId,
+        preparkQuantity: preparkQuantity,
+        preparkDateTime: preparkDateTime ? moment(convertDate(preparkDateTime)).format("YYYY-MM-DD HH:mm:ss") : null,
+        ngtsJobId: null,
+        ngtsJobStatus: 'U',
+        driverId: null,
+        driverName: "",
+        driverMobileNumber: "",
+        vehicleNumber: "",
+        operatorId: 0,
+        isSend: 'N',
+        trackingId: null
+    })
+}
 
 module.exports.GetReqAckModel = function (datas) {
     let result = []
@@ -444,6 +483,35 @@ const GetJobModel = function (requestId, tripNo, row, vehicle, recurringMode, pu
         requestorName: row.requestorName,
         unitCode: row.conductingUnitCode,
     }
+    trip.ngtsRespRecord = {
+        atmsTaskId: null,
+        ngtsTripId: trip.tripNo,
+        referenceId: row.referenceId,
+        transacationType: 'R',
+        transacationDateTime: new Date(),
+        responseStatus: 'A',
+        serviceMode: row.serviceMode,
+        resourceId: row.resourceId,
+        resourceQuantity: row.resourceQuantity,
+        startDateTime: moment(row.startDateTime).format("YYYY-MM-DD HH:mm:ss"),
+        endDateTime: moment(row.endDateTime).format("YYYY-MM-DD HH:mm:ss"),
+        pocUnitCode: row.pocUnitCode,
+        pocName: row.pocName,
+        pocMobileNumber: row.pocMobileNumber,
+        reportingLocationId: row.reportingLocationId,
+        destinationLocationId: row.destinationLocationId,
+        preparkQuantity: 0,
+        preparkDateTime: null,
+        ngtsJobId: null,
+        ngtsJobStatus: 'U',
+        driverId: null,
+        driverName: "",
+        driverMobileNumber: "",
+        vehicleNumber: "",
+        operatorId: 0,
+        isSend: 'N',
+        trackingId: null
+    }
     return trip
 }
 
@@ -457,7 +525,7 @@ const GetPreparkJobModel = function (requestId, tripNo, row, vehicle, recurringM
         status: 'Approved',
         resourceId: row.resourceId,
         vehicleType: vehicle.resourceType,
-        noOfVehicle: Number(row.resourceQuantity),
+        noOfVehicle: Number(row.preparkQuantity),
         noOfDriver: Number(row.numberOfDriver),
         pocUnitCode: row.pocUnitCode,
         poc: row.pocName,
@@ -504,6 +572,35 @@ const GetPreparkJobModel = function (requestId, tripNo, row, vehicle, recurringM
         requestorName: row.requestorName,
         unitCode: row.conductingUnitCode,
     }
+    trip.ngtsRespRecord = {
+        atmsTaskId: null,
+        ngtsTripId: trip.tripNo,
+        referenceId: row.referenceId,
+        transacationType: 'R',
+        transacationDateTime: new Date(),
+        responseStatus: 'A',
+        serviceMode: row.serviceMode,
+        resourceId: row.resourceId,
+        resourceQuantity: row.preparkQuantity,
+        startDateTime: moment(row.preparkDateTime).format("YYYY-MM-DD HH:mm:ss"),
+        endDateTime: moment(row.startDateTime).format("YYYY-MM-DD HH:mm:ss"),
+        pocUnitCode: row.pocUnitCode,
+        pocName: row.pocName,
+        pocMobileNumber: row.pocMobileNumber,
+        reportingLocationId: row.reportingLocationId,
+        destinationLocationId: row.destinationLocationId,
+        preparkQuantity: row.preparkQuantity,
+        preparkDateTime: moment(row.preparkDateTime).format("YYYY-MM-DD HH:mm:ss"),
+        ngtsJobId: null,
+        ngtsJobStatus: 'U',
+        driverId: null,
+        driverName: "",
+        driverMobileNumber: "",
+        vehicleNumber: "",
+        operatorId: 0,
+        isSend: 'N',
+        trackingId: null
+    }
     return trip
 }
 
@@ -546,7 +643,9 @@ const GetCreateModel = async function (createDataList, unitCodeList, recurringMo
 
 const GetTaskModel = async function (trip, row, serviceModeList, mobiusSubUnits, isPrepark = false) {
     let taskQty = trip.noOfVehicle == 0 ? trip.noOfDriver : trip.noOfVehicle
-
+    if (row.preparkDateTime && isPrepark) {
+        taskQty = Number(row.preparkQuantity)
+    }
     let taskList = []
     for (let i = 0; i < taskQty; i++) {
 
@@ -622,35 +721,7 @@ const GetTaskModel = async function (trip, row, serviceModeList, mobiusSubUnits,
             requestorName: row.requestorName,
             unitCode: row.conductingUnitCode,
         }
-        task.ngtsRespRecord = {
-            // atmsTaskId: task.id,
-            ngtsTripId: trip.tripNo,
-            referenceId: row.referenceId,
-            transacationType: 'R',
-            transacationDateTime: new Date(),
-            responseStatus: 'A',
-            serviceMode: row.serviceMode,
-            resourceId: row.resourceId,
-            resourceQuantity: 1,
-            startDateTime: moment(task.startDate).format("YYYY-MM-DD HH:mm:ss"),
-            endDateTime: task.endDate ? moment(task.endDate).format("YYYY-MM-DD HH:mm:ss") : null,
-            pocUnitCode: row.pocUnitCode,
-            pocName: row.pocName,
-            pocMobileNumber: row.pocMobileNumber,
-            reportingLocationId: row.reportingLocationId,
-            destinationLocationId: row.destinationLocationId,
-            preparkQuantity: isPrepark ? 1 : 0,
-            preparkDateTime: isPrepark ? moment(task.startDate).format("YYYY-MM-DD HH:mm:ss") : null,
-            // ngtsJobId: task.id,
-            ngtsJobStatus: 'U',
-            driverId: null,
-            driverName: "",
-            driverMobileNumber: "",
-            vehicleNumber: "",
-            operatorId: 0,
-            isSend: 'N',
-            trackingId: trackingId
-        }
+
         taskList.push(task)
     }
     return taskList
@@ -661,25 +732,25 @@ const GetUpdateModel = async function (updateDataList, recurringModeList, servic
         return { newJobList: [], needCreateTSPList: [], needCancelTSPList: [], needDeleteTaskIdList: [], needDeleteTripIdList: [], updateCancelTaskAcceptIdList: [], errorUpdateReqAckList: [], autoAssignedTripNoList: [] }
     }
 
-    let tripNoList = updateDataList.map(o => o.tripId)
+    let referenceIdList = updateDataList.map(o => o.referenceId)
 
     let jobList = await Job2.findAll({
         where: {
-            tripNo: {
-                [Op.in]: tripNoList
+            referenceId: {
+                [Op.in]: referenceIdList
             }
         }
     })
     let existUpdateDataList = []
     let errorUpdateReqAckList = []
     for (let row of updateDataList) {
-        let tripRow = jobList.find(o => o.tripNo == row.tripId)
+        let tripRow = jobList.find(o => o.referenceId == row.referenceId)
         if (!tripRow) {
             errorUpdateReqAckList.push({
                 referenceId: row.referenceId,
                 lineNumber: row.lineNumber,
-                errorCode: ErrorEnum.NGTS_Trip_ID_NOTEXIST.code,
-                errorMessage: ErrorEnum.NGTS_Trip_ID_NOTEXIST.message
+                errorCode: ErrorEnum.ATMs_Reference_ID_NOTEXIST.code,
+                errorMessage: ErrorEnum.ATMs_Reference_ID_NOTEXIST.message
             })
         } else {
             tripRow.csvRow = row
@@ -975,7 +1046,8 @@ const GetCancelModel = async function (cancelDataList) {
     let referenceIdList = cancelDataList.map(o => o.referenceId)
 
     let cancelledAtmsTaskList = await sequelizeSystemObj.query(
-        `select id as tripId, requestId, referenceId, serviceModeId, serviceTypeId, driver, tripNo, preParkDate from job where referenceId in (?)`,
+        `select id as tripId, requestId, referenceId, serviceModeId, serviceTypeId, driver, tripNo, 
+        noOfVehicle, instanceId, preParkDate, periodStartDate, periodEndDate from job where referenceId in (?)`,
         {
             replacements: [referenceIdList],
             type: QueryTypes.SELECT,
@@ -1106,37 +1178,37 @@ const GetCancelModel = async function (cancelDataList) {
                 }
             }
 
-            let { driverName, driverMobileNumber, vehicleNumber } = await getDriverInfo(task)
-            let isPrepark = await getJobPrepark(trip)
-            task.ngtsRespRecord = {
-                atmsTaskId: task.id,
-                ngtsTripId: trip.tripNo,
-                referenceId: trip.referenceId,
-                transacationType: 'R',
-                transacationDateTime: new Date(),
-                responseStatus: 'A',
-                serviceMode: cancelCSVData.serviceMode,
-                resourceId: cancelCSVData.resourceId,
-                resourceQuantity: 1,
-                startDateTime: moment(task.startDate).format("YYYY-MM-DD HH:mm:ss"),
-                endDateTime: task.endDate ? moment(task.endDate).format("YYYY-MM-DD HH:mm:ss") : null,
-                pocUnitCode: cancelCSVData.pocUnitCode,
-                pocName: cancelCSVData.pocName,
-                pocMobileNumber: cancelCSVData.pocMobileNumber,
-                reportingLocationId: cancelCSVData.reportingLocationId,
-                destinationLocationId: cancelCSVData.destinationLocationId,
-                preparkQuantity: isPrepark ? 1 : 0,
-                preparkDateTime: isPrepark ? moment(task.startDate).format("YYYY-MM-DD HH:mm:ss") : null,
-                ngtsJobId: task.id,
-                ngtsJobStatus: 'C',
-                driverId: task.driverId,
-                driverName: driverName,
-                driverMobileNumber: driverMobileNumber,
-                vehicleNumber: vehicleNumber,
-                operatorId: 0,
-                isSend: 'N',
-                trackingId: task.trackingId
-            }
+
+        }
+        let isPrepark = trip.instanceId
+        trip.ngtsRespRecord = {
+            atmsTaskId: trip.tripId,
+            ngtsTripId: trip.tripNo,
+            referenceId: trip.referenceId,
+            transacationType: 'R',
+            transacationDateTime: new Date(),
+            responseStatus: 'A',
+            serviceMode: cancelCSVData.serviceMode,
+            resourceId: cancelCSVData.resourceId,
+            resourceQuantity: trip.noOfVehicle,
+            startDateTime: isPrepark ? moment(trip.preParkDate).format("YYYY-MM-DD HH:mm:ss") : moment(trip.periodStartDate).format("YYYY-MM-DD HH:mm:ss"),
+            endDateTime: isPrepark ? moment(trip.periodStartDate).format("YYYY-MM-DD HH:mm:ss") : moment(trip.periodEndDate).format("YYYY-MM-DD HH:mm:ss"),
+            pocUnitCode: cancelCSVData.pocUnitCode,
+            pocName: cancelCSVData.pocName,
+            pocMobileNumber: cancelCSVData.pocMobileNumber,
+            reportingLocationId: cancelCSVData.reportingLocationId,
+            destinationLocationId: cancelCSVData.destinationLocationId,
+            preparkQuantity: isPrepark ? trip.noOfVehicle : 0,
+            preparkDateTime: isPrepark ? moment(trip.preParkDate).format("YYYY-MM-DD HH:mm:ss") : null,
+            ngtsJobId: trip.tripId,
+            ngtsJobStatus: 'C',
+            driverId: null,
+            driverName: "",
+            driverMobileNumber: "",
+            vehicleNumber: "",
+            operatorId: 0,
+            isSend: 'N',
+            trackingId: null
         }
     }
     for (let row of cannotCancelTrips) {
