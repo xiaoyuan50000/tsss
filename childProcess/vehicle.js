@@ -74,7 +74,9 @@ const generateVehicleFile = async function (dateformat, verifyDate = false) {
 
     let vehicleList = await NGTSVehicle.findAll({
         where: {
-            status: 'A'
+            status: {
+                [Op.or]: ["A", "U"]
+            }
         }
     })
 
@@ -84,7 +86,7 @@ const generateVehicleFile = async function (dateformat, verifyDate = false) {
         o.group,
         o.serviceType,
         o.serviceMode,
-        o.status,
+        o.status == 'A' && o.baseLineQty != 0 ? 'A' : 'D',
         o.baseLineQty
     ])
     data.push([Prefix.Footer, data.length])

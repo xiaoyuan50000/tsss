@@ -5,6 +5,7 @@ const { NGTSVehicle } = require('../model/system/ngtsVehicle');
 const moment = require('moment');
 const { sequelizeSystemObj } = require('../db/dbConf_system');
 const { Sequelize, Op, QueryTypes } = require('sequelize');
+const { ServiceModeName } = require('../conf/conf')
 
 function compareArrays(arr1, arr2) {
     let newarr1 = arr1.map(Number)
@@ -136,7 +137,9 @@ const saveVehicle = async function () {
         let baseline = baseLineQty || 0
 
         if (status == "disable") {
-            vehicleStatus = "D"
+            vehicleStatus = "U"
+            baseline = 0
+            unavailableReason = `Vehicle Type has been deactivated`
         } else if (!baseline) {
             unavailableReason = `Vehicle's baseline has been used up`
         }
@@ -176,6 +179,26 @@ const saveVehicle = async function () {
     if (records.length) {
         const t = await sequelizeSystemObj.transaction();
         try {
+            let allNGTSVehicle = await NGTSVehicle.findAll()
+            let notForATMSVehicleIdList = allNGTSVehicle.filter(item => {
+                return !records.some(o => o.resourceType == item.resourceType && o.group == item.group && Number(o.serviceTypeId) == Number(item.serviceTypeId) && Number(o.serviceModeId) == Number(item.serviceModeId))
+            }).map(o => o.id)
+
+            if (notForATMSVehicleIdList.length) {
+                await NGTSVehicle.update({
+                    status: 'U',
+                    baseLineQty: 0,
+                    unavailableReason: 'Vehicle Type is no longer belong to ATMS'
+                }, {
+                    where: {
+                        id: {
+                            [Op.in]: notForATMSVehicleIdList
+                        }
+                    },
+                    transaction: t
+                })
+            }
+
             for (let row of records) {
                 let { resourceType, group, serviceTypeId, serviceType, serviceModeId, serviceMode, serviceModeValue, status, baseLineQty, dateFrom, dateTo, unavailableReason } = row
 
@@ -210,6 +233,16 @@ const saveVehicle = async function () {
                     await NGTSVehicle.create(row, { transaction: t })
                 }
             }
+            await NGTSVehicle.update({
+                status: 'D'
+            }, {
+                where: {
+                    serviceMode: {
+                        [Op.in]: ServiceModeName
+                    }
+                },
+                transaction: t
+            })
             await t.commit();
         } catch (error) {
             log.error(error)
