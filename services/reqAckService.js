@@ -52,6 +52,11 @@ const convertDateTimeStr = function (date) {
     return moment(date).format("YYYYMMDDHHmmss")
 }
 
+function isNumber(str) {
+    const num = Number(str);
+    return !isNaN(num) && num.toString() === str;
+}
+
 const ValidTripData = async function (fileDatas) {
     let result = []
     for (let list of fileDatas) {
@@ -99,6 +104,14 @@ const ValidTripData = async function (fileDatas) {
             if (!referenceId || !conductingUnitCode || !purposeNGTSId || !serviceMode || !resourceId || !startDateTime || !endDateTime || !pocName || !pocMobileNumber
                 || !reportingLocationId || !destinationLocationId) {
                 error.push({ referenceId, lineNumber, errorCode: ErrorEnum.Empty_Err.code, errorMessage: ErrorEnum.Empty_Err.message })
+            }
+
+            if (isNumber(conductingUnitCode)) {
+                data.hub = Number(conductingUnitCode)
+                conductingUnitCode = pocUnitCode
+                if (data.hub == 0) {
+                    error.push({ referenceId, lineNumber, errorCode: ErrorEnum.Hub_Node_ERROR.code, errorMessage: ErrorEnum.Hub_Node_ERROR.message })
+                }
             }
 
             if (!RegexContent.NGTS_Trip_ID.test(tripId)) {
@@ -657,13 +670,18 @@ const GetTaskModel = async function (trip, row, serviceModeList, mobiusSubUnits,
             let tspList = await FilterServiceProvider(trip.vehicleType, serviceMode, trip.pickupDestination, trip.dropoffDestination, trip.executionDate, trip.executionTime)
             selectableTspStr = tspList.map(o => o.id).join(',');
         } else if (row.vehicle.group == 'M') {
-            for (let item of mobiusSubUnits) {
-                if (item.group) {
-                    let unitGroupArray = item.group.split(',');
-                    let existGroup = unitGroupArray.find(temp => temp.toLowerCase() == row.conductingUnitCode.toLowerCase());
-                    if (existGroup) {
-                        mobiusUnitId = item.id
-                        break
+            if (row.hub) {
+                mobiusUnitId = row.hub
+            } else {
+
+                for (let item of mobiusSubUnits) {
+                    if (item.group) {
+                        let unitGroupArray = item.group.split(',');
+                        let existGroup = unitGroupArray.find(temp => temp.toLowerCase() == row.conductingUnitCode.toLowerCase());
+                        if (existGroup) {
+                            mobiusUnitId = item.id
+                            break
+                        }
                     }
                 }
             }

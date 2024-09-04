@@ -7,6 +7,8 @@ const { sequelizeSystemObj } = require('../db/dbConf_system');
 const csvUtil = require('../util/csvUtil');
 const utils = require('../util/utils');
 const conf = require('../conf/conf');
+const { ErrorEnum } = require('../util/errorCode')
+
 
 const { Prefix, NGTSFilenamePrefix } = require('../util/content');
 
@@ -615,3 +617,70 @@ const resetPendingBalance = async function (taskIdArr) {
         }
     }
 }
+
+const handleErrorResponse = function (result) {
+
+    const getErrorList = function (errorCode) {
+        let errorList = []
+        if (ErrorEnum.Hub_Node_ERROR.code == errorCode) {
+            errorList.push("Hub/Node")
+        }
+        if (ErrorEnum.Purpose_RegexErr.code == errorCode
+            || ErrorEnum.Purpose_NOTEXIST.code == errorCode) {
+            errorList.push("Purpose")
+        }
+        if (ErrorEnum.NGTS_Resource_ID_RegexErr.code == errorCode
+            || ErrorEnum.NGTS_Resource_ID_NOTEXIST.code == errorCode) {
+            errorList.push("Type of Veh")
+        }
+        if (ErrorEnum.Resource_Quantity_RegexErr.code == errorCode) {
+            errorList.push("Resource Qty")
+        }
+        if (ErrorEnum.Number_of_Driver_RegexErr.code == errorCode
+            || ErrorEnum.Number_of_Driver_Error.code == errorCode) {
+            errorList.push("Resource Required TO")
+        }
+        if (ErrorEnum.Start_DateTime_RegexErr.code == errorCode) {
+            errorList.push("Start Date")
+        }
+        if (ErrorEnum.End_DateTime_RegexErr.code == errorCode
+            || ErrorEnum.End_DateTime_Error.code == errorCode) {
+            errorList.push("End Date")
+        }
+        if (ErrorEnum.Reporting_Location_ID_RegexErr.code == errorCode
+            || ErrorEnum.Reporting_Location_ID_NOTEXIST.code == errorCode) {
+            errorList.push("Reporting Location")
+        }
+        if (ErrorEnum.Destination_Location_ID_RegexErr.code == errorCode
+            || ErrorEnum.Destination_Location_ID_NOTEXIST.code == errorCode) {
+            errorList.push("Destination Location")
+        }
+        if (ErrorEnum.POC_Mobile_Number_RegexErr.code == errorCode) {
+            errorList.push("POC Contact No.")
+        }
+        if (ErrorEnum.Conducting_Unit_Code_NOTEXIST.code == errorCode
+            || ErrorEnum.Conducting_Unit_Code_ERROR.code == errorCode) {
+            errorList.push("Unit")
+        }
+        return errorList.map(val => `${val} is incorrect.<br>`)
+    }
+
+    let lineNumberList = [...new Set(result.map(o => o.lineNumber))]
+    let errors = ""
+    for (let line of lineNumberList) {
+        let rows = result.filter(o => o.lineNumber == line)
+        let error = ""
+        for (let row of rows) {
+            let { errorCode } = row
+            let errorList = getErrorList(errorCode)
+            if (errorList.length) {
+                error += `${errorList.join('')}`
+            }
+        }
+        if (error) {
+            errors += `Line: ${line}<br>${error}<br><br>`
+        }
+    }
+    return errors
+}
+module.exports.handleErrorResponse = handleErrorResponse

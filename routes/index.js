@@ -33,14 +33,21 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 router.post('/upload/indent', upload.single('file'), async function (req, res, next) {
-    const file = req.file;
-    const filePath = utils.getSafeFileName(file.path)
-    let filedata = await reqAckChildPress.readCSVFileData(filePath)
-    let result = await reqAckChildPress.processReqAckFileDatas([filedata])
-    if (result.length) {
-        return Response.error(res, `There are ${result.length} incorrect data`)
+    try {
+        const file = req.file;
+        const filePath = utils.getSafeFileName(file.path)
+        let filedata = await reqAckChildPress.readCSVFileData(filePath)
+        let result = await reqAckChildPress.processReqAckFileDatas([filedata])
+        if (result.length) {
+            let error = reqAckChildPress.handleErrorResponse(result)
+            log.error([filePath, error])
+            return Response.error(res, error)
+        }
+        return Response.success(res)
+    } catch (ex) {
+        log.error(ex)
+        return Response.error(res, 'Upload Failed!')
     }
-    return Response.success(res)
 });
 
 router.get('/api/:file/csv', async function (req, res, next) {
@@ -97,5 +104,6 @@ router.get('/api/saveVehicle', async function (req, res, next) {
         return Response.error(res, `Api error`)
     }
 })
+
 
 module.exports = router;

@@ -60,6 +60,9 @@ class ErrorEnum extends Enum {
 
     static Conducting_Unit_Code_ERROR = new ErrorEnum(70001, 'Conducting Unit Code does not contain NGTS Resource Type.')
 
+    static Hub_Node_ERROR = new ErrorEnum(80001, 'Hub node does not exist.')
+
+
 }
 
 module.exports.ErrorEnum = ErrorEnum
