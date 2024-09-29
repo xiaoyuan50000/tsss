@@ -40,8 +40,8 @@ const convertDate = function (dateStr) {
     if (!dateStr) {
         return null
     }
-    var pattern = /(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/;
-    var formatDateStr = dateStr.replace(pattern, '$1/$2/$3 $4:$5:$6');
+    let pattern = /(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/;
+    let formatDateStr = dateStr.replace(pattern, '$1/$2/$3 $4:$5:$6');
     return new Date(formatDateStr);
 }
 
@@ -137,33 +137,33 @@ const ValidTripData = async function (fileDatas) {
                 error.push({ referenceId, lineNumber, errorCode: ErrorEnum.ConductingUnit_Code_RegexErr.code, errorMessage: ErrorEnum.ConductingUnit_Code_RegexErr.message })
             }
             if (!RegexContent.Service_Mode.test(serviceMode)) {
-                error.push({ referenceId, referenceId, lineNumber, errorCode: ErrorEnum.Service_Mode_RegexErr.code, errorMessage: ErrorEnum.Service_Mode_RegexErr.message })
+                error.push({ referenceId, lineNumber, errorCode: ErrorEnum.Service_Mode_RegexErr.code, errorMessage: ErrorEnum.Service_Mode_RegexErr.message })
             }
             if (!RegexContent.Purpose.test(purposeNGTSId)) {
-                error.push({ referenceId, referenceId, lineNumber, errorCode: ErrorEnum.Purpose_RegexErr.code, errorMessage: ErrorEnum.Purpose_RegexErr.message })
+                error.push({ referenceId, lineNumber, errorCode: ErrorEnum.Purpose_RegexErr.code, errorMessage: ErrorEnum.Purpose_RegexErr.message })
             }
             if (!RegexContent.NGTS_Resource_ID.test(resourceId)) {
-                error.push({ referenceId, referenceId, lineNumber, errorCode: ErrorEnum.NGTS_Resource_ID_RegexErr.code, errorMessage: ErrorEnum.NGTS_Resource_ID_RegexErr.message })
+                error.push({ referenceId, lineNumber, errorCode: ErrorEnum.NGTS_Resource_ID_RegexErr.code, errorMessage: ErrorEnum.NGTS_Resource_ID_RegexErr.message })
             }
 
             if (!RegexContent.Resource_Quantity.test(resourceQuantity)) {
-                error.push({ referenceId, referenceId, lineNumber, errorCode: ErrorEnum.Resource_Quantity_RegexErr.code, errorMessage: ErrorEnum.Resource_Quantity_RegexErr.message })
+                error.push({ referenceId, lineNumber, errorCode: ErrorEnum.Resource_Quantity_RegexErr.code, errorMessage: ErrorEnum.Resource_Quantity_RegexErr.message })
             }
             if (!RegexContent.Start_DateTime.test(startDateTime) || !moment(startDateTime, fmt1).isValid()) {
-                error.push({ referenceId, referenceId, lineNumber, errorCode: ErrorEnum.Start_DateTime_RegexErr.code, errorMessage: ErrorEnum.Start_DateTime_RegexErr.message })
+                error.push({ referenceId, lineNumber, errorCode: ErrorEnum.Start_DateTime_RegexErr.code, errorMessage: ErrorEnum.Start_DateTime_RegexErr.message })
             }
             if (!RegexContent.End_DateTime.test(endDateTime) || !moment(endDateTime, fmt1).isValid()) {
-                error.push({ referenceId, referenceId, lineNumber, errorCode: ErrorEnum.End_DateTime_RegexErr.code, errorMessage: ErrorEnum.End_DateTime_RegexErr.message })
+                error.push({ referenceId, lineNumber, errorCode: ErrorEnum.End_DateTime_RegexErr.code, errorMessage: ErrorEnum.End_DateTime_RegexErr.message })
             }
             if (!RegexContent.POC_Unit_Code.test(pocUnitCode)) {
-                error.push({ referenceId, referenceId, lineNumber, errorCode: ErrorEnum.POC_Unit_Code_RegexErr.code, errorMessage: ErrorEnum.POC_Unit_Code_RegexErr.message })
+                error.push({ referenceId, lineNumber, errorCode: ErrorEnum.POC_Unit_Code_RegexErr.code, errorMessage: ErrorEnum.POC_Unit_Code_RegexErr.message })
             }
 
             if (!RegexContent.POC_Name.test(pocName)) {
-                error.push({ referenceId, referenceId, lineNumber, errorCode: ErrorEnum.POC_Name_RegexErr.code, errorMessage: ErrorEnum.POC_Name_RegexErr.message })
+                error.push({ referenceId, lineNumber, errorCode: ErrorEnum.POC_Name_RegexErr.code, errorMessage: ErrorEnum.POC_Name_RegexErr.message })
             }
             if (!RegexContent.POC_Mobile_Number.test(pocMobileNumber)) {
-                error.push({ referenceId, referenceId, lineNumber, errorCode: ErrorEnum.POC_Mobile_Number_RegexErr.code, errorMessage: ErrorEnum.POC_Mobile_Number_RegexErr.message })
+                error.push({ referenceId, lineNumber, errorCode: ErrorEnum.POC_Mobile_Number_RegexErr.code, errorMessage: ErrorEnum.POC_Mobile_Number_RegexErr.message })
             }
             if (!RegexContent.Reporting_Location_ID.test(reportingLocationId)) {
                 error.push({ referenceId, lineNumber, errorCode: ErrorEnum.Reporting_Location_ID_RegexErr.code, errorMessage: ErrorEnum.Reporting_Location_ID_RegexErr.message })
@@ -1013,7 +1013,7 @@ const getAlreadSendTasks = async function (taskList, alreadySendDataTasks, typeO
         let tasks_attributes = sendData.job.tasks_attributes[0]
         tasks_attributes.tracking_id = trackingId
         let custom_fields_attributes = tasks_attributes.custom_fields_attributes
-        for (var item of custom_fields_attributes) {
+        for (let item of custom_fields_attributes) {
             if (item.custom_field_description_id == conf.CreateJobJsonField.TrackingIdField) {
                 item.value = trackingId
             }
@@ -1553,7 +1553,7 @@ const GetSendJobJson = function (additionalRemarks, user, pickUpLocation, dropOf
     sendJob.job.tasks_attributes[0].tracking_id = task.trackingId
 
     let custom_fields_attributes = sendJob.job.tasks_attributes[0].custom_fields_attributes
-    for (var item of custom_fields_attributes) {
+    for (let item of custom_fields_attributes) {
         if (item.custom_field_description_id == conf.CreateJobJsonField.UserNameField) {
             item.value = user.username
         } else if (item.custom_field_description_id == conf.CreateJobJsonField.ContactNumberField) {

@@ -74,7 +74,7 @@ module.exports.SendDataToFirebase = async function (taskList, content, title = "
     log.info("Firebase Request url: " + url)
     log.info("Firebase Request data: " + JSON.stringify(data, null, 2))
 
-    var config = {
+    let config = {
         method: 'post',
         url: url,
         headers: {
@@ -97,7 +97,7 @@ module.exports.CancelJob = async function (jobId) {
     log.info("3rd Request Driver url: " + url)
     if (!conf.request_3rd_part) { return { message: ["success"] } }
 
-    var config = {
+    let config = {
         method: 'put',
         url: url,
         headers: {
@@ -123,7 +123,7 @@ module.exports.SendDataTo3rd = async function (allocateeId, data) {
         return JobReturn.JobReturnJson()
     }
 
-    var config = {
+    let config = {
         method: 'post',
         url: url,
         headers: {
@@ -144,7 +144,7 @@ module.exports.SendDataTo3rd = async function (allocateeId, data) {
 module.exports.convertSendData = function (data) {
     let sendData = JSON.parse(data)
     let custom_fields_attributes = sendData.job.tasks_attributes[0].custom_fields_attributes
-    for (var item of custom_fields_attributes) {
+    for (let item of custom_fields_attributes) {
         if (item.custom_field_description_id == 2493) {
             item.custom_field_description_id = conf.CreateJobJsonField.UserNameField
         } else if (item.custom_field_description_id == 2550) {
@@ -176,7 +176,7 @@ module.exports.SendTripToMobiusServer = async function (tripIdList) {
     let url = `${conf.mobius_server_url}/assign/initSystemTaskByTripId`
     log.info(`(SendTripToMobiusServer) ${url}`);
     for (let tripId of tripIdList) {
-        var config = {
+        let config = {
             method: 'post',
             url: url,
             headers: {
