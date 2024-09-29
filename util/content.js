@@ -33,7 +33,7 @@ module.exports.RegexContent = {
     End_DateTime: new RegExp(/^[\d]{14}$/),
     POC_Unit_Code: new RegExp(/^[\w ]{0,5}$/),
     POC_Name: new RegExp(/^[\[\]\^$.|?*+(){}\w\s:;",\/'~`!@#%&-_=<>]{0,66}$/),
-    POC_Mobile_Number: new RegExp(/^8\d{7}|9\d{7}$/),
+    POC_Mobile_Number: new RegExp(/^8\d{7}$|^9\d{7}$/),
     Reporting_Location_ID: new RegExp(/^[\d]{0,20}/),
     Destination_Location_ID: new RegExp(/^[\d]{0,20}/),
     Prepark_Quantity: new RegExp(/^[\d]{0,4}$/),
