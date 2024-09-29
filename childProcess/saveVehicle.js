@@ -148,7 +148,7 @@ const saveVehicle = async function () {
             let serviceModeList = serviceMode.split(',')
             for (let serviceMode of serviceModeList) {
                 let obj = vehicleSubGroupList.find(o => o.serviceMode.toUpperCase() == serviceMode.toUpperCase()
-                    && o.serviceType.toUpperCase() == category.toUpperCase())
+                    && o.serviceType.toUpperCase() == category.toUpperCase() && o.category.toUpperCase() == 'MV')
                 log.info(JSON.stringify(obj))
                 if (obj) {
                     if (!records.some(o => o.resourceType == vehicleName && Number(o.serviceTypeId) == Number(obj.serviceTypeId) && Number(o.serviceModeId) == Number(obj.serviceModeId))) {

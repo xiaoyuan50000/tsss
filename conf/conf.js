@@ -1,5 +1,6 @@
 module.exports.dbServerConf = {
     host: 'localhost',
+    // host: '192.168.1.18',
     user: 'root',
     password: 'root',
     port: 3306,
@@ -9,6 +10,7 @@ module.exports.dbServerConf = {
 
 module.exports.dbSystemConf = {
     host: 'localhost',
+    // host: '192.168.1.18',
     user: 'root',
     password: 'root',
     port: 3306,
@@ -90,3 +92,11 @@ module.exports.SFTPConf = {
     readyTimeout: 10000,
     retries: 0,
 };
+
+module.exports.ServiceModeName = [
+    'Ferry Service',
+    'Admin Dispatch',
+    'Off-shore',
+    'Direct Enlistment',
+    'Recruit Book In Book Out'
+]
